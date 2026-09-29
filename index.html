@@ -30,7 +30,7 @@
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f8f9fc;
             color: #1e293b;
-            padding: 1rem;
+            padding: 0.5rem;
             min-height: 100vh;
             min-height: 100dvh;
             display: flex;
@@ -44,25 +44,25 @@
             max-width: 1500px;
             width: 100%;
             background: white;
-            border-radius: 20px;
+            border-radius: 16px;
             box-shadow: 0 10px 30px -8px rgba(0, 0, 0, 0.15);
             overflow: hidden;
             border: 1px solid rgba(255, 255, 255, 0.3);
             display: flex;
             flex-direction: column;
-            height: calc(100vh - 2rem);
-            height: calc(100dvh - 2rem);
+            height: calc(100vh - 1rem);
+            height: calc(100dvh - 1rem);
         }
 
         .app-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 0.85rem 1.25rem;
+            padding: 0.65rem 0.85rem;
             background: #ffffff;
             border-bottom: 1px solid #e9edf4;
             flex-wrap: wrap;
-            gap: 8px;
+            gap: 6px;
             flex-shrink: 0;
             position: relative;
             z-index: 30;
@@ -71,7 +71,7 @@
         .logo-area {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             flex-shrink: 0;
         }
 
@@ -79,20 +79,20 @@
             background: #1e6f3f;
             color: white;
             font-weight: 700;
-            font-size: 1.3rem;
-            width: 40px;
-            height: 40px;
+            font-size: 1.1rem;
+            width: 34px;
+            height: 34px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 12px;
+            border-radius: 10px;
             box-shadow: 0 4px 12px -4px rgba(30, 111, 63, 0.4);
             letter-spacing: -0.5px;
             flex-shrink: 0;
         }
 
         .logo-text {
-            font-size: 1.45rem;
+            font-size: 1.15rem;
             font-weight: 700;
             letter-spacing: -0.02em;
             background: linear-gradient(135deg, #1e6f3f 0%, #2b8c4e 100%);
@@ -114,7 +114,7 @@
         .upload-area {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             flex-wrap: wrap;
             flex: 1;
             justify-content: flex-end;
@@ -122,17 +122,17 @@
 
         .file-label {
             background: #1e6f3f;
-            padding: 0.6rem 1.1rem;
+            padding: 0.5rem 0.85rem;
             border-radius: 50px;
             font-weight: 600;
-            font-size: 0.85rem;
+            font-size: 0.78rem;
             color: white;
             cursor: pointer;
             transition: all 0.15s;
             border: none;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
             white-space: nowrap;
             box-shadow: 0 4px 10px -4px rgba(30, 111, 63, 0.5);
             -webkit-user-select: none;
@@ -145,8 +145,8 @@
         }
 
         .file-label svg {
-            width: 16px;
-            height: 16px;
+            width: 14px;
+            height: 14px;
             stroke: white;
             stroke-width: 2.2;
             fill: none;
@@ -158,15 +158,15 @@
         }
 
         .status-badge {
-            font-size: 0.72rem;
+            font-size: 0.65rem;
             background: #eef9f0;
             color: #1e6f3f;
-            padding: 0.4rem 0.8rem;
+            padding: 0.35rem 0.65rem;
             border-radius: 40px;
             font-weight: 600;
             border: 1px solid #c6e9cf;
             white-space: nowrap;
-            max-width: 180px;
+            max-width: 140px;
             overflow: hidden;
             text-overflow: ellipsis;
         }
@@ -174,8 +174,8 @@
         .action-toolbar {
             display: flex;
             align-items: center;
-            gap: 6px;
-            padding: 0.6rem 1rem;
+            gap: 5px;
+            padding: 0.5rem 0.75rem;
             background: #f8fafc;
             border-bottom: 1px solid #e9edf4;
             flex-shrink: 0;
@@ -189,21 +189,22 @@
         .action-btn {
             background: white;
             border: 1px solid #e2e8f0;
-            padding: 0.5rem 0.9rem;
-            border-radius: 10px;
-            font-size: 0.8rem;
+            padding: 0.45rem 0.7rem;
+            border-radius: 9px;
+            font-size: 0.72rem;
             font-weight: 600;
             color: #1e293b;
             cursor: pointer;
             transition: all 0.15s;
             display: inline-flex;
             align-items: center;
-            gap: 5px;
+            gap: 4px;
             white-space: nowrap;
             font-family: inherit;
             -webkit-user-select: none;
             user-select: none;
             flex-shrink: 0;
+            min-height: 36px;
         }
 
         .action-btn:active:not(:disabled) {
@@ -217,8 +218,8 @@
         }
 
         .action-btn svg {
-            width: 14px;
-            height: 14px;
+            width: 13px;
+            height: 13px;
             stroke: currentColor;
             stroke-width: 2.4;
             fill: none;
@@ -257,16 +258,32 @@
             border-color: #cbd5e1;
         }
 
+        .action-btn.warn {
+            background: #fef2f2;
+            border-color: #fecaca;
+            color: #b91c1c;
+        }
+
+        .action-btn.warn:active:not(:disabled) {
+            background: #fee2e2;
+        }
+
+        .action-btn.warn:disabled {
+            background: #f1f5f9;
+            border-color: #e2e8f0;
+            color: #94a3b8;
+        }
+
         .action-divider {
             width: 1px;
-            height: 24px;
+            height: 22px;
             background: #e2e8f0;
             flex-shrink: 0;
-            margin: 0 2px;
+            margin: 0 1px;
         }
 
         .spreadsheet-wrapper {
-            padding: 0 1rem 1rem 1rem;
+            padding: 0 0.5rem 0.5rem 0.5rem;
             background: #ffffff;
             display: flex;
             flex-direction: column;
@@ -278,9 +295,9 @@
         .sheet-tabs {
             display: flex;
             gap: 2px;
-            padding: 0.6rem 0 0 0;
+            padding: 0.5rem 0 0 0;
             border-bottom: 1px solid #e2e8f0;
-            margin-bottom: 0.6rem;
+            margin-bottom: 0.5rem;
             flex-wrap: nowrap;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
@@ -293,11 +310,11 @@
         .sheet-tab {
             background: transparent;
             border: none;
-            padding: 0.5rem 1.1rem;
-            font-size: 0.82rem;
+            padding: 0.45rem 0.85rem;
+            font-size: 0.75rem;
             font-weight: 500;
             color: #64748b;
-            border-radius: 10px 10px 0 0;
+            border-radius: 8px 8px 0 0;
             cursor: pointer;
             transition: 0.15s;
             font-family: inherit;
@@ -307,6 +324,7 @@
             flex-shrink: 0;
             -webkit-user-select: none;
             user-select: none;
+            min-height: 36px;
         }
 
         .sheet-tab.active {
@@ -319,12 +337,12 @@
         .col-nav-bar {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 0.5rem 0.75rem;
+            gap: 6px;
+            padding: 0.4rem 0.6rem;
             background: #f8fafc;
             border: 1px solid #e9edf4;
-            border-radius: 12px;
-            margin-bottom: 0.6rem;
+            border-radius: 10px;
+            margin-bottom: 0.5rem;
             flex-wrap: nowrap;
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
@@ -336,7 +354,7 @@
         .col-nav-bar.hidden { display: none; }
 
         .col-nav-label {
-            font-size: 0.7rem;
+            font-size: 0.62rem;
             font-weight: 700;
             color: #475569;
             text-transform: uppercase;
@@ -345,12 +363,12 @@
         }
 
         .col-nav-input {
-            width: 55px;
-            padding: 0.35rem 0.4rem;
-            border-radius: 8px;
+            width: 48px;
+            padding: 0.3rem 0.35rem;
+            border-radius: 6px;
             border: 1px solid #e2e8f0;
             font-family: inherit;
-            font-size: 0.8rem;
+            font-size: 0.72rem;
             font-weight: 600;
             color: #1e293b;
             background: white;
@@ -367,16 +385,16 @@
         .col-nav-sep {
             color: #cbd5e1;
             font-weight: 600;
-            font-size: 0.8rem;
+            font-size: 0.72rem;
             flex-shrink: 0;
         }
 
         .col-nav-btn {
             background: white;
             border: 1px solid #e2e8f0;
-            width: 30px;
-            height: 30px;
-            border-radius: 8px;
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -385,6 +403,8 @@
             color: #1e6f3f;
             padding: 0;
             flex-shrink: 0;
+            min-width: 30px;
+            min-height: 30px;
         }
 
         .col-nav-btn:active:not(:disabled) {
@@ -400,8 +420,8 @@
         }
 
         .col-nav-btn svg {
-            width: 14px;
-            height: 14px;
+            width: 13px;
+            height: 13px;
             stroke: currentColor;
             stroke-width: 2.6;
             fill: none;
@@ -410,12 +430,12 @@
         }
 
         .col-nav-info {
-            font-size: 0.72rem;
+            font-size: 0.65rem;
             color: #64748b;
             font-weight: 500;
             margin-left: auto;
             white-space: nowrap;
-            padding-left: 8px;
+            padding-left: 6px;
             flex-shrink: 0;
         }
 
@@ -428,20 +448,21 @@
             background: #eef9f0;
             border: 1px solid #c6e9cf;
             color: #1e6f3f;
-            padding: 0.35rem 0.7rem;
+            padding: 0.3rem 0.55rem;
             border-radius: 40px;
-            font-size: 0.72rem;
+            font-size: 0.65rem;
             font-weight: 700;
             cursor: pointer;
             font-family: inherit;
             white-space: nowrap;
             flex-shrink: 0;
+            min-height: 30px;
         }
 
         .col-jump:active { background: #d3eedb; }
 
         .table-container {
-            border-radius: 12px;
+            border-radius: 10px;
             border: 1px solid #e9edf4;
             overflow: auto;
             flex: 1;
@@ -456,23 +477,23 @@
 
         .excel-table {
             border-collapse: collapse;
-            font-size: 0.8rem;
+            font-size: 0.72rem;
             table-layout: fixed;
         }
 
         .excel-table th,
         .excel-table td {
             border: 1px solid #e2e8f0;
-            padding: 0.45rem 0.6rem;
+            padding: 0.4rem 0.5rem;
             text-align: left;
             vertical-align: middle;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             position: relative;
-            width: 110px;
-            min-width: 110px;
-            max-width: 110px;
+            width: 100px;
+            min-width: 100px;
+            max-width: 100px;
             background-color: #ffffff;
             color: #1e293b;
         }
@@ -484,7 +505,7 @@
             top: 0;
             z-index: 10;
             border-bottom: 2px solid #d1d9e6;
-            font-size: 0.7rem;
+            font-size: 0.62rem;
             text-transform: uppercase;
             letter-spacing: 0.03em;
             color: #475569;
@@ -494,11 +515,11 @@
             background: #f1f5f9 !important;
             color: #94a3b8 !important;
             font-weight: 700 !important;
-            font-size: 0.65rem !important;
+            font-size: 0.6rem !important;
             text-align: center !important;
-            width: 42px !important;
-            min-width: 42px !important;
-            max-width: 42px !important;
+            width: 36px !important;
+            min-width: 36px !important;
+            max-width: 36px !important;
             cursor: default !important;
             -webkit-user-select: none;
             user-select: none;
@@ -538,25 +559,37 @@
             position: absolute;
             top: 1px;
             right: 3px;
-            font-size: 0.55rem;
+            font-size: 0.5rem;
             color: #b91c1c;
             opacity: 0.75;
             pointer-events: none;
         }
 
+        /* Removed markers style (no red) */
+        .excel-table td.cleared {
+            color: #1e293b !important;
+            font-weight: normal !important;
+            background-color: #ffffff !important;
+            box-shadow: none !important;
+        }
+
+        .excel-table td.cleared::after {
+            content: none !important;
+        }
+
         .empty-state {
-            padding: 3rem 1.5rem;
+            padding: 2rem 1rem;
             text-align: center;
             color: #94a3b8;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 14px;
+            gap: 12px;
         }
 
         .empty-state svg {
-            width: 56px;
-            height: 56px;
+            width: 48px;
+            height: 48px;
             stroke: #cbd5e1;
             stroke-width: 1.5;
             fill: none;
@@ -564,13 +597,13 @@
 
         .empty-state h3 {
             font-weight: 600;
-            font-size: 1.15rem;
+            font-size: 1rem;
             color: #334155;
         }
 
         .empty-state p {
-            max-width: 400px;
-            font-size: 0.85rem;
+            max-width: 340px;
+            font-size: 0.78rem;
             color: #64748b;
             line-height: 1.5;
         }
@@ -579,22 +612,22 @@
             background: #fef2f2;
             border: 1px solid #fecaca;
             color: #b91c1c;
-            padding: 0.8rem 1rem;
-            border-radius: 12px;
-            margin: 0 1rem 0.75rem 1rem;
+            padding: 0.6rem 0.8rem;
+            border-radius: 10px;
+            margin: 0 0.5rem 0.5rem 0.5rem;
             font-weight: 500;
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             flex-shrink: 0;
         }
 
         .footer-note {
             text-align: center;
-            font-size: 0.7rem;
+            font-size: 0.62rem;
             color: #94a3b8;
-            padding: 0.6rem 1rem;
+            padding: 0.5rem 0.75rem;
             border-top: 1px solid #eef2f6;
             flex-shrink: 0;
         }
@@ -605,11 +638,11 @@
 
         .quick-nav {
             position: fixed;
-            right: 1rem;
-            bottom: 1rem;
+            right: 0.75rem;
+            bottom: 0.75rem;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
             z-index: 50;
             opacity: 0;
             transition: opacity 0.2s ease;
@@ -619,8 +652,8 @@
         .quick-nav.visible { opacity: 1; pointer-events: auto; }
 
         .nav-btn {
-            width: 44px;
-            height: 44px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
             background: white;
             border: 1px solid #e2e8f0;
@@ -632,6 +665,8 @@
             transition: all 0.15s;
             color: #1e6f3f;
             padding: 0;
+            min-width: 40px;
+            min-height: 40px;
         }
 
         .nav-btn:active:not(:disabled) {
@@ -644,8 +679,8 @@
         .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
 
         .nav-btn svg {
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             stroke: currentColor;
             stroke-width: 2.4;
             fill: none;
@@ -653,7 +688,7 @@
             stroke-linejoin: round;
         }
 
-        .table-container::-webkit-scrollbar { width: 10px; height: 10px; }
+        .table-container::-webkit-scrollbar { width: 8px; height: 8px; }
         .table-container::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 20px; }
         .table-container::-webkit-scrollbar-thumb {
             background: #cbd5e1;
@@ -664,14 +699,14 @@
 
         .toast {
             position: fixed;
-            bottom: 80px;
+            bottom: 70px;
             left: 50%;
             transform: translateX(-50%) translateY(20px);
             background: #1e293b;
             color: white;
-            padding: 0.7rem 1.5rem;
+            padding: 0.6rem 1.2rem;
             border-radius: 50px;
-            font-size: 0.82rem;
+            font-size: 0.75rem;
             font-weight: 600;
             box-shadow: 0 15px 25px -8px rgba(0,0,0,0.3);
             opacity: 0;
@@ -697,18 +732,18 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 14px;
+            gap: 12px;
             z-index: 100;
-            border-radius: 12px;
+            border-radius: 10px;
             font-weight: 600;
-            font-size: 0.85rem;
+            font-size: 0.78rem;
             color: #1e6f3f;
             backdrop-filter: blur(2px);
         }
 
         .spinner {
-            width: 36px;
-            height: 36px;
+            width: 32px;
+            height: 32px;
             border: 4px solid #e2e8f0;
             border-top-color: #1e6f3f;
             border-radius: 50%;
@@ -719,31 +754,30 @@
         .style-note {
             display: none;
             align-items: center;
-            gap: 5px;
-            font-size: 0.7rem;
+            gap: 4px;
+            font-size: 0.62rem;
             color: #64748b;
             background: #f1f5f9;
-            padding: 0.3rem 0.7rem;
+            padding: 0.25rem 0.55rem;
             border-radius: 40px;
             border: 1px solid #e2e8f0;
             white-space: nowrap;
         }
         .style-note svg {
-            width: 12px;
-            height: 12px;
+            width: 11px;
+            height: 11px;
             stroke: #1e6f3f;
             fill: none;
             stroke-width: 2;
         }
 
-        /* Cloud status pill */
         .cloud-pill {
             display: inline-flex;
             align-items: center;
-            gap: 5px;
-            font-size: 0.7rem;
+            gap: 4px;
+            font-size: 0.62rem;
             font-weight: 600;
-            padding: 0.35rem 0.75rem;
+            padding: 0.3rem 0.6rem;
             border-radius: 40px;
             background: #e0f2fe;
             color: #0369a1;
@@ -751,8 +785,8 @@
             white-space: nowrap;
         }
         .cloud-pill .dot {
-            width: 7px;
-            height: 7px;
+            width: 6px;
+            height: 6px;
             border-radius: 50%;
             background: #0ea5e9;
             animation: pulse 1.5s infinite;
@@ -762,19 +796,18 @@
             50% { opacity: 0.4; }
         }
 
-        /* Session restore banner */
         .session-banner {
             background: #eef9f0;
             border: 1px solid #c6e9cf;
             color: #1e6f3f;
-            padding: 0.6rem 1rem;
-            border-radius: 12px;
-            margin: 0 1rem 0.75rem 1rem;
+            padding: 0.5rem 0.75rem;
+            border-radius: 10px;
+            margin: 0 0.5rem 0.5rem 0.5rem;
             font-weight: 500;
-            font-size: 0.85rem;
+            font-size: 0.75rem;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
             flex-shrink: 0;
             justify-content: space-between;
             flex-wrap: wrap;
@@ -784,13 +817,14 @@
             background: #1e6f3f;
             border: none;
             color: white;
-            padding: 0.35rem 1rem;
+            padding: 0.3rem 0.8rem;
             border-radius: 40px;
             font-weight: 600;
-            font-size: 0.78rem;
+            font-size: 0.68rem;
             cursor: pointer;
             font-family: inherit;
             transition: all 0.15s;
+            min-height: 32px;
         }
 
         .session-banner button:active {
@@ -802,6 +836,43 @@
             background: transparent;
             color: #1e6f3f;
             border: 1px solid #c6e9cf;
+        }
+
+        .global-banner {
+            background: #f0f9ff;
+            border: 1px solid #bae6fd;
+            color: #0369a1;
+            padding: 0.5rem 0.75rem;
+            border-radius: 10px;
+            margin: 0 0.5rem 0.5rem 0.5rem;
+            font-weight: 500;
+            font-size: 0.72rem;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            flex-shrink: 0;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .global-banner .badge {
+            background: #0ea5e9;
+            color: white;
+            padding: 0.12rem 0.5rem;
+            border-radius: 40px;
+            font-size: 0.62rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+        }
+
+        /* Auto-save indicator */
+        .autosave-dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #22c55e;
+            margin-right: 3px;
+            animation: pulse 2s infinite;
         }
 
         @media (min-width: 600px) {
@@ -816,7 +887,7 @@
             .logo-text { font-size: 1.65rem; }
             .tagline { display: inline; }
             .action-toolbar { padding: 0.7rem 1.5rem; gap: 8px; }
-            .action-btn { padding: 0.55rem 1.1rem; font-size: 0.85rem; }
+            .action-btn { padding: 0.55rem 1.1rem; font-size: 0.85rem; min-height: 40px; }
             .spreadsheet-wrapper { padding: 0 1.5rem 1.5rem 1.5rem; }
             .excel-table th,
             .excel-table td {
@@ -848,16 +919,16 @@
         }
 
         @media (max-height: 500px) and (orientation: landscape) {
-            .app-header { padding: 0.5rem 1rem; }
-            .logo-icon { width: 34px; height: 34px; font-size: 1.1rem; border-radius: 10px; }
-            .logo-text { font-size: 1.2rem; }
+            .app-header { padding: 0.4rem 0.75rem; }
+            .logo-icon { width: 30px; height: 30px; font-size: 1rem; border-radius: 8px; }
+            .logo-text { font-size: 1.05rem; }
             .tagline { display: none; }
-            .action-toolbar { padding: 0.4rem 1rem; }
-            .action-btn { padding: 0.4rem 0.75rem; font-size: 0.75rem; }
+            .action-toolbar { padding: 0.35rem 0.75rem; }
+            .action-btn { padding: 0.35rem 0.6rem; font-size: 0.68rem; min-height: 32px; }
             .status-badge { display: none; }
             .footer-note { display: none; }
-            .sheet-tabs { padding-top: 0.4rem; margin-bottom: 0.4rem; }
-            .spreadsheet-wrapper { padding: 0 0.75rem 0.75rem 0.75rem; }
+            .sheet-tabs { padding-top: 0.3rem; margin-bottom: 0.3rem; }
+            .spreadsheet-wrapper { padding: 0 0.5rem 0.5rem 0.5rem; }
         }
 
         @media (hover: none) and (pointer: coarse) {
@@ -876,6 +947,17 @@
         .excel-table td[contenteditable="true"] {
             -webkit-user-select: text;
             user-select: text;
+        }
+
+        /* Ensure contenteditable cells on mobile behave well */
+        @media (max-width: 600px) {
+            .excel-table td[contenteditable="true"] {
+                -webkit-user-modify: read-write-plaintext-only;
+                word-wrap: break-word;
+            }
+            .action-toolbar {
+                padding: 0.4rem 0.5rem;
+            }
         }
     </style>
 </head>
@@ -898,7 +980,7 @@
                         <polyline points="17 8 12 3 7 8" />
                         <line x1="12" y1="3" x2="12" y2="15" />
                     </svg>
-                    Open file
+                    Open
                 </label>
                 <input type="file" id="file-input" accept=".xlsx, .xls, .xlsm, .xlsb, .csv">
                 <span class="status-badge" id="status-badge">Ready</span>
@@ -915,25 +997,27 @@
                 Redo
             </button>
             <div class="action-divider"></div>
-            <button class="action-btn primary" id="btn-save" disabled>
-                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                    <polyline points="17 21 17 13 7 13 7 21" />
-                    <polyline points="7 3 7 8 15 8" />
-                </svg>
-                Save
+            <button class="action-btn warn" id="btn-clear-marks" title="Remove red edit markers" disabled>
+                <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                Clear Marks
             </button>
+            <div class="action-divider"></div>
             <button class="action-btn cloud" id="btn-cloud" disabled>
                 <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>
                 </svg>
-                Save to Cloud
+                Publish to All
             </button>
             <div class="action-divider"></div>
             <button class="action-btn" id="btn-revert" title="Revert all changes" disabled>
                 <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
                 Revert
             </button>
+        </div>
+
+        <div id="global-banner" class="global-banner" style="display: none;">
+            <span>🌐 <strong>Shared file:</strong> <span id="global-file-name"></span> — you're editing the live global version. Changes you publish will be visible to all visitors.</span>
+            <span class="badge">GLOBAL</span>
         </div>
 
         <div id="session-banner" class="session-banner" style="display: none;">
@@ -984,14 +1068,15 @@
                         <polyline points="10 9 9 9 8 9" />
                     </svg>
                     <h3>No spreadsheet loaded</h3>
-                    <p>Open an <strong>.xlsx, .xls, .csv</strong> file. Original styles are preserved. Edit any cell — changes appear in <strong style="color:#b91c1c">red</strong>. Click <strong style="color:#0ea5e9">Save to Cloud</strong> to send to Supabase.</p>
+                    <p>Open an <strong>.xlsx, .xls, .csv</strong> file. Original styles are preserved. Edit any cell — changes appear in <strong style="color:#b91c1c">red</strong>. Click <strong style="color:#0ea5e9">Publish to All</strong> to share with every visitor.</p>
                 </div>
                 <div id="table-content" style="display: none;"></div>
             </div>
         </div>
 
         <div class="footer-note">
-            <strong>H Excel</strong> · styles preserved · <span class="red-note">✎ red = unsaved</span> · <span class="cloud-note">☁ cloud sync</span> · <span style="color:#0ea5e9;">💾 auto‑saved locally</span>
+            <span class="autosave-dot"></span>
+            <strong>H Excel</strong> · auto-save on · <span class="red-note">✎ red = new edit</span> · <span class="cloud-note">☁ publish to all</span>
         </div>
     </div>
 
@@ -1012,7 +1097,6 @@
             const SUPABASE_URL = 'https://efpgvitonqscblqmjicr.supabase.co';
             const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVmcGd2aXRvbnFzY2JscW1qaWNyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1OTg2MjgsImV4cCI6MjEwNjE3NDYyOH0.aeMKbl2pOVmetJrrKhoZzBo53pxyO-02ZngNsIzsQsU';
 
-            // Initialize Supabase client
             let supabase = null;
             try {
                 supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -1029,11 +1113,11 @@
             const tableContainer = document.getElementById('table-container');
             const emptyState = document.getElementById('empty-state');
             const tableContent = document.getElementById('table-content');
-            const btnSave = document.getElementById('btn-save');
             const btnCloud = document.getElementById('btn-cloud');
             const btnUndo = document.getElementById('btn-undo');
             const btnRedo = document.getElementById('btn-redo');
             const btnRevert = document.getElementById('btn-revert');
+            const btnClearMarks = document.getElementById('btn-clear-marks');
             const toast = document.getElementById('toast');
             const navTop = document.getElementById('nav-top');
             const navBottom = document.getElementById('nav-bottom');
@@ -1044,6 +1128,8 @@
             const sessionBanner = document.getElementById('session-banner');
             const restoreSessionBtn = document.getElementById('restore-session');
             const dismissSessionBtn = document.getElementById('dismiss-session');
+            const globalBanner = document.getElementById('global-banner');
+            const globalFileName = document.getElementById('global-file-name');
 
             const colNavBar = document.getElementById('col-nav-bar');
             const colFirst = document.getElementById('col-first');
@@ -1060,25 +1146,27 @@
             let currentSheetName = '';
             let sheetNames = [];
             let originalSheetData = {};
-            let editedCells = {};
+            let editedCells = {};       // current unsaved edits (red)
+            let clearedCells = {};      // cells where user cleared red marker but kept value
             let hasUnsavedChanges = false;
             let currentFileName = '';
-            let lastFileBase64 = null;        // for session restore
+            let isGlobalMode = false;
+            let globalFileRecord = null;
 
-            // Undo/Redo
             let history = [];
             let historyIndex = -1;
 
-            // Column window
             const DEFAULT_WINDOW = 20;
             let totalColumns = 0;
             let colWindowStart = 0;
             let colWindowSize = DEFAULT_WINDOW;
             let isWindowed = false;
 
-            // Styles
             let styleMap = {};
             let mergedMap = {};
+
+            // Auto-save timer
+            let autoSaveTimer = null;
 
             // ============ UTILS ============
             function showToast(message, type = '') {
@@ -1094,7 +1182,7 @@
             }
             function showError(message) {
                 errorContainer.innerHTML = `
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="12" cy="12" r="10" />
                         <line x1="12" y1="8" x2="12" y2="12" />
                         <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -1130,6 +1218,19 @@
                 if (hex.length === 6) return '#' + hex;
                 return null;
             }
+            function arrayBufferToBase64(buffer) {
+                let binary = '';
+                const bytes = new Uint8Array(buffer);
+                const len = bytes.byteLength;
+                for (let i = 0; i < len; i++) binary += String.fromCharCode(bytes[i]);
+                return btoa(binary);
+            }
+            function base64ToUint8Array(base64) {
+                const binary = atob(base64);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+                return bytes;
+            }
 
             // ============ HISTORY ============
             function pushHistory() {
@@ -1138,6 +1239,7 @@
                 }
                 const snapshot = {
                     editedCells: JSON.parse(JSON.stringify(editedCells)),
+                    clearedCells: JSON.parse(JSON.stringify(clearedCells)),
                     currentSheetName: currentSheetName
                 };
                 history.push(snapshot);
@@ -1148,6 +1250,7 @@
 
             function applyHistorySnapshot(snapshot) {
                 editedCells = JSON.parse(JSON.stringify(snapshot.editedCells));
+                clearedCells = JSON.parse(JSON.stringify(snapshot.clearedCells || {}));
                 hasUnsavedChanges = Object.keys(editedCells).length > 0;
                 updateSaveButtonState();
                 updateHistoryButtons();
@@ -1184,12 +1287,14 @@
             // ============ BUTTON STATE ============
             function updateSaveButtonState() {
                 const hasEdits = hasUnsavedChanges && workbook;
-                btnSave.disabled = !hasEdits;
                 btnCloud.disabled = !hasEdits;
                 btnRevert.disabled = !hasEdits;
+                // Clear marks enabled if there are any red marks
+                const hasMarks = Object.keys(editedCells).length > 0;
+                btnClearMarks.disabled = !hasMarks;
             }
 
-            // ============ STYLE EXTRACTION (enhanced: font colors, thick/thin borders) ============
+            // ============ STYLE EXTRACTION ============
             function extractStyles(sheet) {
                 const styles = {};
                 const merges = {};
@@ -1213,7 +1318,6 @@
                         if (!cell) continue;
                         const styleParts = [];
 
-                        // --- FILL (background color) ---
                         if (cell.s && cell.s.fill) {
                             const fill = cell.s.fill;
                             const fg = fill.fgColor;
@@ -1226,7 +1330,6 @@
                             }
                         }
 
-                        // --- FONT (color, family, size, bold, italic, underline) ---
                         if (cell.s && cell.s.font) {
                             const font = cell.s.font;
                             if (font.color && font.color.rgb) {
@@ -1247,7 +1350,6 @@
                             }
                         }
 
-                        // --- ALIGNMENT ---
                         if (cell.s && cell.s.alignment) {
                             const align = cell.s.alignment;
                             if (align.horizontal) styleParts.push(`text-align:${align.horizontal}`);
@@ -1258,7 +1360,6 @@
                             }
                         }
 
-                        // --- BORDERS (thick / thin / double / dashed / dotted / medium) ---
                         if (cell.s && cell.s.border) {
                             const b = cell.s.border;
                             const borderSide = (side, cssProp) => {
@@ -1421,9 +1522,32 @@
                 } else {
                     editedCells[sheetName][key] = newValue;
                 }
+                // Remove from cleared list if re-edited
+                if (clearedCells[sheetName] && clearedCells[sheetName][key]) {
+                    delete clearedCells[sheetName][key];
+                    if (Object.keys(clearedCells[sheetName]).length === 0) delete clearedCells[sheetName];
+                }
                 hasUnsavedChanges = Object.keys(editedCells).length > 0;
                 updateSaveButtonState();
-                persistSession();
+                scheduleAutoSave();
+            }
+
+            function clearAllMarks() {
+                if (Object.keys(editedCells).length === 0) return;
+                // Move all current edits into cleared (value is kept, just no red)
+                Object.keys(editedCells).forEach(sheetName => {
+                    if (!clearedCells[sheetName]) clearedCells[sheetName] = {};
+                    Object.keys(editedCells[sheetName]).forEach(key => {
+                        clearedCells[sheetName][key] = editedCells[sheetName][key];
+                    });
+                });
+                editedCells = {};
+                hasUnsavedChanges = false;
+                updateSaveButtonState();
+                if (currentSheetName) renderSheet(currentSheetName);
+                pushHistory();
+                scheduleAutoSave();
+                showToast('Red markers cleared — values kept', 'success');
             }
 
             function applyEditHighlights(sheetName) {
@@ -1431,6 +1555,7 @@
                 if (!table) return;
                 const rows = table.querySelectorAll('tbody tr');
                 const edits = editedCells[sheetName] || {};
+                const cleared = clearedCells[sheetName] || {};
                 rows.forEach((tr) => {
                     const cells = tr.querySelectorAll('td[contenteditable="true"]');
                     cells.forEach((td) => {
@@ -1438,65 +1563,83 @@
                         const globalCol = parseInt(td.dataset.col, 10);
                         if (isNaN(globalRow) || isNaN(globalCol)) return;
                         const key = `${globalRow},${globalCol}`;
+                        td.classList.remove('edited', 'cleared');
                         if (edits[key] !== undefined) {
                             td.classList.add('edited');
-                        } else {
-                            td.classList.remove('edited');
+                        } else if (cleared[key] !== undefined) {
+                            td.classList.add('cleared');
                         }
                     });
                 });
             }
 
-            // ============ SESSION PERSISTENCE ============
-            function persistSession() {
+            // ============ AUTO-SAVE ============
+            function scheduleAutoSave() {
+                if (autoSaveTimer) clearTimeout(autoSaveTimer);
+                autoSaveTimer = setTimeout(() => {
+                    autoSaveNow();
+                }, 1200);
+            }
+
+            function autoSaveNow() {
                 if (!workbook || !currentFileName) return;
                 try {
-                    const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-                    const bytes = new Uint8Array(wbout);
-                    let binary = '';
-                    for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
-                    const base64 = btoa(binary);
+                    // Apply pending edits to a copy of the workbook for storage
+                    const wbCopy = XLSX.read(XLSX.write(workbook, { bookType: 'xlsx', type: 'array' }), {
+                        type: 'array', cellStyles: true, dense: true
+                    });
+                    Object.keys(editedCells).forEach(sheetName => {
+                        const sheet = wbCopy.Sheets[sheetName];
+                        if (!sheet) return;
+                        const currentData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false });
+                        const edits = editedCells[sheetName];
+                        Object.keys(edits).forEach(key => {
+                            const [rowStr, colStr] = key.split(',');
+                            const rowIdx = parseInt(rowStr, 10);
+                            const colIdx = parseInt(colStr, 10);
+                            while (currentData.length <= rowIdx) currentData.push([]);
+                            while (currentData[rowIdx].length <= colIdx) currentData[rowIdx].push('');
+                            currentData[rowIdx][colIdx] = edits[key];
+                        });
+                        const newSheet = XLSX.utils.aoa_to_sheet(currentData);
+                        if (sheet['!merges']) newSheet['!merges'] = sheet['!merges'];
+                        wbCopy.Sheets[sheetName] = newSheet;
+                    });
 
+                    const wbout = XLSX.write(wbCopy, { bookType: 'xlsx', type: 'array' });
+                    const base64 = arrayBufferToBase64(wbout);
                     const sessionData = {
                         fileName: currentFileName,
                         fileBase64: base64,
                         editedCells: editedCells,
+                        clearedCells: clearedCells,
                         originalSheetData: originalSheetData,
                         timestamp: Date.now()
                     };
                     localStorage.setItem('hExcelSession', JSON.stringify(sessionData));
+                    // Update status badge subtly
+                    statusBadge.textContent = statusBadge.textContent.replace(/\s·\s⟳.*$/, '') + ' · ⟳';
                 } catch (err) {
-                    console.warn('Session persist failed:', err);
+                    console.warn('Auto-save failed:', err);
                 }
             }
 
-            function restoreSession() {
+            // ============ LOCAL SESSION ============
+            function restoreLocalSession() {
                 const saved = localStorage.getItem('hExcelSession');
                 if (!saved) return false;
                 try {
                     const session = JSON.parse(saved);
                     if (!session.fileBase64 || !session.fileName) return false;
-
-                    const binary = atob(session.fileBase64);
-                    const bytes = new Uint8Array(binary.length);
-                    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-
+                    const bytes = base64ToUint8Array(session.fileBase64);
                     currentFileName = session.fileName;
                     editedCells = session.editedCells || {};
+                    clearedCells = session.clearedCells || {};
                     originalSheetData = session.originalSheetData || {};
                     hasUnsavedChanges = Object.keys(editedCells).length > 0;
-
-                    const wb = XLSX.read(bytes, {
-                        type: 'array',
-                        cellDates: false,
-                        raw: false,
-                        cellStyles: true,
-                        dense: true,
-                        sheetStubs: true
-                    });
+                    const wb = XLSX.read(bytes, { type: 'array', cellDates: false, raw: false, cellStyles: true, dense: true, sheetStubs: true });
                     workbook = wb;
                     sheetNames = wb.SheetNames;
-
                     styleMap = {};
                     mergedMap = {};
                     sheetNames.forEach(name => {
@@ -1507,7 +1650,6 @@
                             mergedMap[name] = merges;
                         }
                     });
-
                     emptyState.style.display = 'none';
                     buildSheetTabs();
                     statusBadge.textContent = `Restored · ${session.fileName}`;
@@ -1528,27 +1670,147 @@
                 if (saved) {
                     try {
                         const session = JSON.parse(saved);
-                        if (session.fileName) {
-                            sessionBanner.style.display = 'flex';
-                        }
+                        if (session.fileName) sessionBanner.style.display = 'flex';
                     } catch (e) { /* ignore */ }
                 }
             }
 
             restoreSessionBtn.addEventListener('click', () => {
-                if (restoreSession()) {
-                    showToast('Session restored', 'success');
-                } else {
-                    showToast('Failed to restore session', 'error');
-                    sessionBanner.style.display = 'none';
-                }
+                if (restoreLocalSession()) showToast('Session restored', 'success');
+                else { showToast('Failed to restore session', 'error'); sessionBanner.style.display = 'none'; }
             });
-
             dismissSessionBtn.addEventListener('click', () => {
                 sessionBanner.style.display = 'none';
                 localStorage.removeItem('hExcelSession');
                 showToast('Session dismissed');
             });
+
+            // ============ GLOBAL SHARED FILE ============
+            async function fetchGlobalFile() {
+                if (!supabase) return null;
+                try {
+                    const { data, error } = await supabase
+                        .from('shared_files')
+                        .select('*')
+                        .order('updated_at', { ascending: false })
+                        .limit(1)
+                        .maybeSingle();
+                    if (error && error.code !== 'PGRST116') throw error;
+                    return data || null;
+                } catch (err) {
+                    console.warn('Fetch global file error:', err);
+                    return null;
+                }
+            }
+
+            async function loadGlobalFileIntoApp(record) {
+                if (!record || !record.file_data) return false;
+                try {
+                    globalFileRecord = record;
+                    isGlobalMode = true;
+                    currentFileName = record.file_name || 'shared.xlsx';
+                    const bytes = base64ToUint8Array(record.file_data);
+                    const wb = XLSX.read(bytes, {
+                        type: 'array', cellDates: false, raw: false,
+                        cellStyles: true, dense: true, sheetStubs: true
+                    });
+                    workbook = wb;
+                    sheetNames = wb.SheetNames;
+                    originalSheetData = {};
+                    editedCells = record.edits || {};
+                    clearedCells = {};
+                    hasUnsavedChanges = Object.keys(editedCells).length > 0;
+
+                    styleMap = {};
+                    mergedMap = {};
+                    sheetNames.forEach(name => {
+                        const sheet = wb.Sheets[name];
+                        if (sheet) {
+                            const { styles, merges } = extractStyles(sheet);
+                            styleMap[name] = styles;
+                            mergedMap[name] = merges;
+                        }
+                    });
+
+                    emptyState.style.display = 'none';
+                    buildSheetTabs();
+                    statusBadge.textContent = `Global · ${sheetNames.length} sheet${sheetNames.length > 1 ? 's' : ''}`;
+                    updateSaveButtonState();
+                    updateColNavUI();
+                    updateQuickNav();
+                    resetHistory();
+                    globalBanner.style.display = 'flex';
+                    globalFileName.textContent = currentFileName;
+                    cloudStatus.textContent = 'Global file loaded';
+                    showToast('🌐 Loaded shared file from cloud', 'cloud');
+                    return true;
+                } catch (err) {
+                    console.error('Load global file error:', err);
+                    return false;
+                }
+            }
+
+            async function publishToGlobal() {
+                if (!supabase) { showError('Supabase client not initialized.'); return; }
+                if (!workbook) { showError('No workbook loaded.'); return; }
+
+                setLoading(true, 'Publishing to all visitors…');
+                cloudStatus.textContent = 'Publishing…';
+
+                try {
+                    const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+                    const base64 = arrayBufferToBase64(wbout);
+                    const mergedEdits = Object.assign({}, globalFileRecord?.edits || {}, editedCells);
+
+                    const { error: delError } = await supabase.from('shared_files').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                    if (delError) throw delError;
+
+                    const { data, error } = await supabase
+                        .from('shared_files')
+                        .insert({
+                            file_name: currentFileName || 'shared.xlsx',
+                            file_data: base64,
+                            edits: mergedEdits,
+                            updated_at: new Date().toISOString()
+                        })
+                        .select()
+                        .single();
+
+                    if (error) throw error;
+
+                    globalFileRecord = data;
+                    isGlobalMode = true;
+                    editedCells = {};
+                    clearedCells = {};
+                    hasUnsavedChanges = false;
+                    updateSaveButtonState();
+                    if (currentSheetName) renderSheet(currentSheetName);
+                    resetHistory();
+                    autoSaveNow();
+
+                    globalBanner.style.display = 'flex';
+                    globalFileName.textContent = currentFileName;
+                    cloudStatus.textContent = 'Published globally';
+                    showToast('🌐 Published! All visitors will now see this file', 'cloud');
+                    statusBadge.textContent = `Global · ${currentFileName}`;
+                } catch (err) {
+                    console.error('Publish error:', err);
+                    cloudStatus.textContent = 'Publish failed';
+                    showError('Publish failed: ' + (err.message || 'unknown error'));
+                    showToast('🌐 Publish failed', 'error');
+                } finally {
+                    setLoading(false);
+                }
+            }
+
+            async function tryAutoLoadGlobal() {
+                const localSession = localStorage.getItem('hExcelSession');
+                if (localSession) return;
+                const record = await fetchGlobalFile();
+                if (record && record.file_data) {
+                    await loadGlobalFileIntoApp(record);
+                }
+            }
 
             // ============ RENDER ============
             function renderCurrentSheet() {
@@ -1754,20 +2016,20 @@
                 try {
                     originalSheetData = {};
                     editedCells = {};
+                    clearedCells = {};
                     styleMap = {};
                     mergedMap = {};
                     hasUnsavedChanges = false;
+                    isGlobalMode = false;
+                    globalFileRecord = null;
+                    globalBanner.style.display = 'none';
                     updateSaveButtonState();
                     colNavBar.classList.add('hidden');
                     currentFileName = fileName || 'untitled';
 
                     const wb = XLSX.read(data, {
-                        type: 'array',
-                        cellDates: false,
-                        raw: false,
-                        cellStyles: true,
-                        dense: true,
-                        sheetStubs: true
+                        type: 'array', cellDates: false, raw: false,
+                        cellStyles: true, dense: true, sheetStubs: true
                     });
                     workbook = wb;
                     sheetNames = wb.SheetNames;
@@ -1789,7 +2051,7 @@
                     updateColNavUI();
                     updateQuickNav();
                     resetHistory();
-                    persistSession();
+                    autoSaveNow();
                 } catch (err) {
                     console.error(err);
                     resetUI();
@@ -1798,141 +2060,18 @@
                 }
             }
 
-            // ============ SAVE LOCAL ============
-            function saveChanges() {
-                if (!workbook || !hasUnsavedChanges) return;
-
-                Object.keys(editedCells).forEach(sheetName => {
-                    const sheet = workbook.Sheets[sheetName];
-                    if (!sheet) return;
-                    const currentData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false });
-                    const edits = editedCells[sheetName];
-
-                    Object.keys(edits).forEach(key => {
-                        const [rowStr, colStr] = key.split(',');
-                        const rowIdx = parseInt(rowStr, 10);
-                        const colIdx = parseInt(colStr, 10);
-                        const newValue = edits[key];
-                        while (currentData.length <= rowIdx) currentData.push([]);
-                        while (currentData[rowIdx].length <= colIdx) currentData[rowIdx].push('');
-                        currentData[rowIdx][colIdx] = newValue;
-                    });
-
-                    const newSheet = XLSX.utils.aoa_to_sheet(currentData);
-                    if (sheet['!merges']) newSheet['!merges'] = sheet['!merges'];
-                    workbook.Sheets[sheetName] = newSheet;
-                    originalSheetData[sheetName] = currentData.map(row => [...row]);
-                });
-
-                editedCells = {};
-                hasUnsavedChanges = false;
-                updateSaveButtonState();
-                if (currentSheetName) renderSheet(currentSheetName);
-                showToast('Changes saved · signatures removed', 'success');
-                statusBadge.textContent = `Saved · ${currentSheetName || ''}`;
-                resetHistory();
-                persistSession();
-            }
-
-            // ============ SAVE TO SUPABASE ============
-            async function saveToCloud() {
-                if (!supabase) {
-                    showError('Supabase client not initialized.');
-                    return;
-                }
-                if (!workbook) {
-                    showError('No workbook loaded.');
-                    return;
-                }
-
-                const payloads = [];
-                Object.keys(editedCells).forEach(sheetName => {
-                    const edits = editedCells[sheetName];
-                    Object.keys(edits).forEach(key => {
-                        const [rowStr, colStr] = key.split(',');
-                        const rowIdx = parseInt(rowStr, 10);
-                        const colIdx = parseInt(colStr, 10);
-                        const value = edits[key];
-                        const original = originalSheetData[sheetName]?.[rowIdx]?.[colIdx] ?? '';
-                        payloads.push({
-                            file_name: currentFileName,
-                            sheet_name: sheetName,
-                            row_index: rowIdx,
-                            col_index: colIdx,
-                            column_letter: colLetter(colIdx),
-                            old_value: String(original),
-                            new_value: String(value),
-                            edited_at: new Date().toISOString()
-                        });
-                    });
-                });
-
-                if (payloads.length === 0) {
-                    showToast('No edits to save', 'error');
-                    return;
-                }
-
-                setLoading(true, `Saving ${payloads.length} edit${payloads.length > 1 ? 's' : ''} to cloud…`);
-                cloudStatus.textContent = 'Uploading…';
-
-                try {
-                    const { data, error } = await supabase
-                        .from('excel_edits')
-                        .insert(payloads)
-                        .select();
-
-                    if (error) throw error;
-
-                    Object.keys(editedCells).forEach(sheetName => {
-                        const sheet = workbook.Sheets[sheetName];
-                        if (!sheet) return;
-                        const currentData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false });
-                        const edits = editedCells[sheetName];
-                        Object.keys(edits).forEach(key => {
-                            const [rowStr, colStr] = key.split(',');
-                            const rowIdx = parseInt(rowStr, 10);
-                            const colIdx = parseInt(colStr, 10);
-                            while (currentData.length <= rowIdx) currentData.push([]);
-                            while (currentData[rowIdx].length <= colIdx) currentData[rowIdx].push('');
-                            currentData[rowIdx][colIdx] = edits[key];
-                        });
-                        const newSheet = XLSX.utils.aoa_to_sheet(currentData);
-                        if (sheet['!merges']) newSheet['!merges'] = sheet['!merges'];
-                        workbook.Sheets[sheetName] = newSheet;
-                        originalSheetData[sheetName] = currentData.map(row => [...row]);
-                    });
-
-                    editedCells = {};
-                    hasUnsavedChanges = false;
-                    updateSaveButtonState();
-                    if (currentSheetName) renderSheet(currentSheetName);
-                    resetHistory();
-                    persistSession();
-
-                    cloudStatus.textContent = 'Cloud synced';
-                    showToast(`☁ ${payloads.length} edit${payloads.length > 1 ? 's' : ''} saved to cloud`, 'cloud');
-                    statusBadge.textContent = `Cloud saved · ${payloads.length}`;
-                } catch (err) {
-                    console.error('Cloud save error:', err);
-                    cloudStatus.textContent = 'Cloud error';
-                    showError('Cloud save failed: ' + (err.message || 'unknown error'));
-                    showToast('☁ Cloud save failed', 'error');
-                } finally {
-                    setLoading(false);
-                }
-            }
-
             // ============ REVERT ============
             function revertAll() {
-                if (!workbook || !hasUnsavedChanges) return;
-                if (!confirm('Revert all unsaved changes?')) return;
+                if (!workbook) return;
+                if (!confirm('Revert all unsaved changes? This will remove all red markers and restore the original values.')) return;
                 editedCells = {};
+                clearedCells = {};
                 hasUnsavedChanges = false;
                 updateSaveButtonState();
                 if (currentSheetName) renderSheet(currentSheetName);
-                showToast('All changes reverted');
+                showToast('All changes reverted to original');
                 resetHistory();
-                persistSession();
+                autoSaveNow();
             }
 
             // ============ RESET ============
@@ -1942,6 +2081,7 @@
                 sheetNames = [];
                 originalSheetData = {};
                 editedCells = {};
+                clearedCells = {};
                 styleMap = {};
                 mergedMap = {};
                 hasUnsavedChanges = false;
@@ -1950,6 +2090,8 @@
                 colWindowSize = DEFAULT_WINDOW;
                 isWindowed = false;
                 currentFileName = '';
+                isGlobalMode = false;
+                globalFileRecord = null;
                 updateSaveButtonState();
                 sheetTabs.style.display = 'none';
                 sheetTabs.innerHTML = '';
@@ -1963,6 +2105,7 @@
                 navBottom.disabled = true;
                 quickNav.classList.remove('visible');
                 colNavBar.classList.add('hidden');
+                globalBanner.style.display = 'none';
                 setLoading(false);
                 history = [];
                 historyIndex = -1;
@@ -2003,24 +2146,20 @@
             });
 
             fileLabel.addEventListener('click', () => { fileInput.value = ''; });
-            btnSave.addEventListener('click', saveChanges);
-            btnCloud.addEventListener('click', saveToCloud);
+            btnCloud.addEventListener('click', publishToGlobal);
             btnUndo.addEventListener('click', undo);
             btnRedo.addEventListener('click', redo);
             btnRevert.addEventListener('click', revertAll);
+            btnClearMarks.addEventListener('click', clearAllMarks);
 
-            // Keyboard shortcuts
             document.addEventListener('keydown', (e) => {
                 if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
                     e.preventDefault(); undo();
                 } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) {
                     e.preventDefault(); redo();
-                } else if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-                    e.preventDefault(); saveChanges();
                 }
             });
 
-            // Drag and drop
             document.body.addEventListener('dragover', (e) => {
                 e.preventDefault(); e.stopPropagation();
                 fileLabel.style.background = '#2b8c4e';
@@ -2050,6 +2189,7 @@
             // ============ INIT ============
             resetUI();
             checkForSession();
+            tryAutoLoadGlobal();
 
         })();
     </script>
