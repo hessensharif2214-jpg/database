@@ -760,6 +760,48 @@
             50% { opacity: 0.4; }
         }
 
+        /* Session restore banner */
+        .session-banner {
+            background: #eef9f0;
+            border: 1px solid #c6e9cf;
+            color: #1e6f3f;
+            padding: 0.6rem 1rem;
+            border-radius: 12px;
+            margin: 0 1rem 0.75rem 1rem;
+            font-weight: 500;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        .session-banner button {
+            background: #1e6f3f;
+            border: none;
+            color: white;
+            padding: 0.35rem 1rem;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 0.78rem;
+            cursor: pointer;
+            font-family: inherit;
+            transition: all 0.15s;
+        }
+
+        .session-banner button:active {
+            background: #185a32;
+            transform: scale(0.96);
+        }
+
+        .session-banner button.secondary {
+            background: transparent;
+            color: #1e6f3f;
+            border: 1px solid #c6e9cf;
+        }
+
         @media (min-width: 600px) {
             body { padding: 1.5rem; }
             .app-container {
@@ -892,6 +934,14 @@
             </button>
         </div>
 
+        <div id="session-banner" class="session-banner" style="display: none;">
+            <span>📂 Last session found. Restore your previous file and edits?</span>
+            <span>
+                <button id="restore-session">Restore</button>
+                <button id="dismiss-session" class="secondary">Dismiss</button>
+            </span>
+        </div>
+
         <div id="error-container" style="display: none;" class="error-message"></div>
 
         <div class="spreadsheet-wrapper">
@@ -939,7 +989,7 @@
         </div>
 
         <div class="footer-note">
-            <strong>H Excel</strong> · styles preserved · <span class="red-note">✎ red = unsaved</span> · <span class="cloud-note">☁ cloud sync</span>
+            <strong>H Excel</strong> · styles preserved · <span class="red-note">✎ red = unsaved</span> · <span class="cloud-note">☁ cloud sync</span> · <span style="color:#0ea5e9;">💾 auto‑saved locally</span>
         </div>
     </div>
 
@@ -989,6 +1039,9 @@
             const loadingOverlay = document.getElementById('loading-overlay');
             const cloudStatus = document.getElementById('cloud-status');
             const cloudPill = document.getElementById('cloud-pill');
+            const sessionBanner = document.getElementById('session-banner');
+            const restoreSessionBtn = document.getElementById('restore-session');
+            const dismissSessionBtn = document.getElementById('dismiss-session');
 
             const colNavBar = document.getElementById('col-nav-bar');
             const colFirst = document.getElementById('col-first');
@@ -1008,6 +1061,7 @@
             let editedCells = {};
             let hasUnsavedChanges = false;
             let currentFileName = '';
+            let lastFileBase64 = null;        // for session restore
 
             // Undo/Redo
             let history = [];
@@ -1332,6 +1386,7 @@
                 }
                 hasUnsavedChanges = Object.keys(editedCells).length > 0;
                 updateSaveButtonState();
+                persistSession();  // auto-save to localStorage after every edit
             }
 
             function applyEditHighlights(sheetName) {
@@ -1354,6 +1409,115 @@
                     });
                 });
             }
+
+            // ============ SESSION PERSISTENCE ============
+            function persistSession() {
+                if (!workbook || !currentFileName) return;
+                try {
+                    // Convert current workbook (including any unsaved edits) to array buffer
+                    const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+                    const bytes = new Uint8Array(wbout);
+                    let binary = '';
+                    for (let i = 0; i < bytes.byteLength; i++) binary += String.fromCharCode(bytes[i]);
+                    const base64 = btoa(binary);
+
+                    const sessionData = {
+                        fileName: currentFileName,
+                        fileBase64: base64,
+                        editedCells: editedCells,
+                        originalSheetData: originalSheetData,
+                        timestamp: Date.now()
+                    };
+                    localStorage.setItem('hExcelSession', JSON.stringify(sessionData));
+                } catch (err) {
+                    console.warn('Session persist failed:', err);
+                }
+            }
+
+            function restoreSession() {
+                const saved = localStorage.getItem('hExcelSession');
+                if (!saved) return false;
+                try {
+                    const session = JSON.parse(saved);
+                    if (!session.fileBase64 || !session.fileName) return false;
+
+                    // Decode base64 back to Uint8Array
+                    const binary = atob(session.fileBase64);
+                    const bytes = new Uint8Array(binary.length);
+                    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+
+                    // Restore state
+                    currentFileName = session.fileName;
+                    editedCells = session.editedCells || {};
+                    originalSheetData = session.originalSheetData || {};
+                    hasUnsavedChanges = Object.keys(editedCells).length > 0;
+
+                    // Parse workbook
+                    const wb = XLSX.read(bytes, {
+                        type: 'array',
+                        cellDates: false,
+                        raw: false,
+                        cellStyles: true,
+                        dense: true,
+                        sheetStubs: true
+                    });
+                    workbook = wb;
+                    sheetNames = wb.SheetNames;
+
+                    // Rebuild style maps
+                    styleMap = {};
+                    mergedMap = {};
+                    sheetNames.forEach(name => {
+                        const sheet = wb.Sheets[name];
+                        if (sheet) {
+                            const { styles, merges } = extractStyles(sheet);
+                            styleMap[name] = styles;
+                            mergedMap[name] = merges;
+                        }
+                    });
+
+                    // Reset UI
+                    emptyState.style.display = 'none';
+                    buildSheetTabs();
+                    statusBadge.textContent = `Restored · ${session.fileName}`;
+                    updateSaveButtonState();
+                    updateColNavUI();
+                    updateQuickNav();
+                    resetHistory();
+                    sessionBanner.style.display = 'none';
+                    return true;
+                } catch (err) {
+                    console.error('Session restore failed:', err);
+                    return false;
+                }
+            }
+
+            function checkForSession() {
+                const saved = localStorage.getItem('hExcelSession');
+                if (saved) {
+                    try {
+                        const session = JSON.parse(saved);
+                        if (session.fileName) {
+                            sessionBanner.style.display = 'flex';
+                        }
+                    } catch (e) { /* ignore */ }
+                }
+            }
+
+            restoreSessionBtn.addEventListener('click', () => {
+                if (restoreSession()) {
+                    showToast('Session restored', 'success');
+                } else {
+                    showToast('Failed to restore session', 'error');
+                    sessionBanner.style.display = 'none';
+                }
+            });
+
+            dismissSessionBtn.addEventListener('click', () => {
+                sessionBanner.style.display = 'none';
+                localStorage.removeItem('hExcelSession');
+                showToast('Session dismissed');
+            });
 
             // ============ RENDER ============
             function renderCurrentSheet() {
@@ -1594,6 +1758,7 @@
                     updateColNavUI();
                     updateQuickNav();
                     resetHistory();
+                    persistSession();  // save session after loading a new file
                 } catch (err) {
                     console.error(err);
                     resetUI();
@@ -1635,6 +1800,7 @@
                 showToast('Changes saved · signatures removed', 'success');
                 statusBadge.textContent = `Saved · ${currentSheetName || ''}`;
                 resetHistory();
+                persistSession();
             }
 
             // ============ SAVE TO SUPABASE ============
@@ -1689,7 +1855,6 @@
                     if (error) throw error;
 
                     // Also update local workbook after cloud save
-                    // (apply the edits so the save button can be used)
                     Object.keys(editedCells).forEach(sheetName => {
                         const sheet = workbook.Sheets[sheetName];
                         if (!sheet) return;
@@ -1714,6 +1879,7 @@
                     updateSaveButtonState();
                     if (currentSheetName) renderSheet(currentSheetName);
                     resetHistory();
+                    persistSession();
 
                     cloudStatus.textContent = 'Cloud synced';
                     showToast(`☁ ${payloads.length} edit${payloads.length > 1 ? 's' : ''} saved to cloud`, 'cloud');
@@ -1738,6 +1904,7 @@
                 if (currentSheetName) renderSheet(currentSheetName);
                 showToast('All changes reverted');
                 resetHistory();
+                persistSession();
             }
 
             // ============ RESET ============
@@ -1825,8 +1992,6 @@
                 }
             });
 
-            resetUI();
-
             // Drag and drop
             document.body.addEventListener('dragover', (e) => {
                 e.preventDefault(); e.stopPropagation();
@@ -1853,6 +2018,10 @@
                     fileInput.dispatchEvent(new Event('change', { bubbles: true }));
                 }
             });
+
+            // ============ INIT ============
+            resetUI();
+            checkForSession();
 
         })();
     </script>
