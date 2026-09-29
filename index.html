@@ -274,12 +274,80 @@
             color: #94a3b8;
         }
 
+        .action-btn.format-active {
+            background: #1e6f3f;
+            border-color: #1e6f3f;
+            color: white;
+        }
+
         .action-divider {
             width: 1px;
             height: 22px;
             background: #e2e8f0;
             flex-shrink: 0;
             margin: 0 1px;
+        }
+
+        .color-picker-wrap {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .color-picker-btn {
+            background: white;
+            border: 1px solid #e2e8f0;
+            padding: 0.45rem 0.7rem;
+            border-radius: 9px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            color: #1e293b;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            min-height: 36px;
+            font-family: inherit;
+        }
+
+        .color-picker-btn .swatch {
+            width: 14px;
+            height: 14px;
+            border-radius: 4px;
+            border: 1px solid #cbd5e1;
+            background: #b91c1c;
+        }
+
+        .color-picker-btn:active {
+            transform: scale(0.95);
+        }
+
+        .color-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            margin-top: 4px;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 6px;
+            box-shadow: 0 10px 25px -8px rgba(0,0,0,0.25);
+            display: none;
+            grid-template-columns: repeat(5, 26px);
+            gap: 4px;
+            z-index: 200;
+        }
+        .color-menu.show { display: grid; }
+        .color-menu .sw {
+            width: 26px;
+            height: 26px;
+            border-radius: 5px;
+            border: 2px solid #e2e8f0;
+            cursor: pointer;
+        }
+        .color-menu .sw:active {
+            transform: scale(0.9);
         }
 
         .spreadsheet-wrapper {
@@ -563,6 +631,17 @@
             color: #b91c1c;
             opacity: 0.75;
             pointer-events: none;
+        }
+
+        /* Cell-level inline formatting overrides — must win over .edited styling */
+        .excel-table td.fmt-bold {
+            font-weight: 700 !important;
+        }
+        .excel-table td.fmt-italic {
+            font-style: italic !important;
+        }
+        .excel-table td.fmt-color {
+            /* color applied via inline style — class just a marker */
         }
 
         .excel-table td.cleared {
@@ -964,14 +1043,37 @@
         </div>
 
         <div class="action-toolbar">
-            <button class="action-btn" id="btn-undo" title="Undo (Ctrl+Z)" disabled>
+            <button class="action-btn" id="btn-undo" title="Undo" disabled>
                 <svg viewBox="0 0 24 24"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
                 Undo
             </button>
-            <button class="action-btn" id="btn-redo" title="Redo (Ctrl+Y)" disabled>
+            <button class="action-btn" id="btn-redo" title="Redo" disabled>
                 <svg viewBox="0 0 24 24"><polyline points="15 14 20 9 15 4"/><path d="M4 20v-7a4 4 0 0 1 4-4h12"/></svg>
                 Redo
             </button>
+            <div class="action-divider"></div>
+            <button class="action-btn" id="btn-bold" title="Bold selected cell (B)">
+                <svg viewBox="0 0 24 24"><path d="M6 4h8a4 4 0 0 1 0 8H6z"/><path d="M6 12h9a4 4 0 0 1 0 8H6z"/></svg>
+                B
+            </button>
+            <div class="color-picker-wrap">
+                <button class="color-picker-btn" id="btn-color" title="Text color">
+                    <span class="swatch" id="color-swatch"></span>
+                    A
+                </button>
+                <div class="color-menu" id="color-menu">
+                    <div class="sw" data-color="#b91c1c" style="background:#b91c1c"></div>
+                    <div class="sw" data-color="#ea580c" style="background:#ea580c"></div>
+                    <div class="sw" data-color="#ca8a04" style="background:#ca8a04"></div>
+                    <div class="sw" data-color="#16a34a" style="background:#16a34a"></div>
+                    <div class="sw" data-color="#0891b2" style="background:#0891b2"></div>
+                    <div class="sw" data-color="#2563eb" style="background:#2563eb"></div>
+                    <div class="sw" data-color="#7c3aed" style="background:#7c3aed"></div>
+                    <div class="sw" data-color="#db2777" style="background:#db2777"></div>
+                    <div class="sw" data-color="#1e293b" style="background:#1e293b"></div>
+                    <div class="sw" data-color="#64748b" style="background:#64748b"></div>
+                </div>
+            </div>
             <div class="action-divider"></div>
             <button class="action-btn cloud" id="btn-cloud" disabled>
                 <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
@@ -991,7 +1093,7 @@
         </div>
 
         <div id="global-banner" class="global-banner" style="display: none;">
-            <span>🌐 <strong>Shared file:</strong> <span id="global-file-name"></span> — everyone sees this file & its edits. Publish to update for all.</span>
+            <span>🌐 <strong>Shared file:</strong> <span id="global-file-name"></span> — everyone sees this file, its edits, bold text and colors.</span>
             <span class="badge">GLOBAL</span>
         </div>
 
@@ -1043,7 +1145,7 @@
                         <polyline points="10 9 9 9 8 9" />
                     </svg>
                     <h3>No spreadsheet loaded</h3>
-                    <p>Open an <strong>.xlsx, .xls, .csv</strong> file. Original styles are preserved. Edit any cell — changes appear in <strong style="color:#b91c1c">red</strong>. Click <strong style="color:#0ea5e9">Publish to All</strong> to share with every visitor.</p>
+                    <p>Open an <strong>.xlsx, .xls, .csv</strong> file. Edit cells, make text <strong>bold</strong>, change <strong>colors</strong>. Click <strong style="color:#0ea5e9">Publish to All</strong> to share with every visitor.</p>
                 </div>
                 <div id="table-content" style="display: none;"></div>
             </div>
@@ -1051,7 +1153,7 @@
 
         <div class="footer-note">
             <span class="autosave-dot"></span>
-            <strong>H Excel</strong> · auto-save on · <span class="red-note">✎ red = edit</span> · <span class="cloud-note">☁ publish to all</span>
+            <strong>H Excel</strong> · auto-save on · <span class="red-note">✎ red = new edit</span> · <span class="cloud-note">☁ publish to all</span>
         </div>
     </div>
 
@@ -1093,6 +1195,10 @@
             const btnRedo = document.getElementById('btn-redo');
             const btnRevert = document.getElementById('btn-revert');
             const btnClearMarks = document.getElementById('btn-clear-marks');
+            const btnBold = document.getElementById('btn-bold');
+            const btnColor = document.getElementById('btn-color');
+            const colorMenu = document.getElementById('color-menu');
+            const colorSwatch = document.getElementById('color-swatch');
             const toast = document.getElementById('toast');
             const navTop = document.getElementById('nav-top');
             const navBottom = document.getElementById('nav-bottom');
@@ -1121,12 +1227,16 @@
             let currentSheetName = '';
             let sheetNames = [];
             let originalSheetData = {};
-            let editedCells = {};       // { sheetName: { "row,col": value } } — red markers shown
-            let clearedCells = {};      // { sheetName: { "row,col": value } } — cleared, no red marker
+            let editedCells = {};       // { sheet: { "r,c": newValue } }
+            let cellFormats = {};       // { sheet: { "r,c": { bold:true, color:"#..." } } }
+            let clearedCells = {};      // { sheet: { "r,c": value } } — value kept, no red
             let hasUnsavedChanges = false;
             let currentFileName = '';
             let isGlobalMode = false;
             let globalFileRecord = null;
+
+            let selectedCell = null;    // DOM element of currently focused cell
+            let selectedCellKey = null; // "sheet|r,c"
 
             let history = [];
             let historyIndex = -1;
@@ -1205,6 +1315,7 @@
                 for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
                 return bytes;
             }
+            function cellKey(sheet, r, c) { return `${sheet}|${r},${c}`; }
 
             // ============ HISTORY ============
             function pushHistory() {
@@ -1213,6 +1324,7 @@
                 }
                 const snapshot = {
                     editedCells: JSON.parse(JSON.stringify(editedCells)),
+                    cellFormats: JSON.parse(JSON.stringify(cellFormats)),
                     clearedCells: JSON.parse(JSON.stringify(clearedCells)),
                     currentSheetName: currentSheetName
                 };
@@ -1224,8 +1336,9 @@
 
             function applyHistorySnapshot(snapshot) {
                 editedCells = JSON.parse(JSON.stringify(snapshot.editedCells));
+                cellFormats = JSON.parse(JSON.stringify(snapshot.cellFormats || {}));
                 clearedCells = JSON.parse(JSON.stringify(snapshot.clearedCells || {}));
-                hasUnsavedChanges = Object.keys(editedCells).length > 0;
+                hasUnsavedChanges = Object.keys(editedCells).length > 0 || Object.keys(cellFormats).length > 0;
                 updateSaveButtonState();
                 updateHistoryButtons();
                 if (currentSheetName) renderSheet(currentSheetName);
@@ -1499,14 +1612,31 @@
                     delete clearedCells[sheetName][key];
                     if (Object.keys(clearedCells[sheetName]).length === 0) delete clearedCells[sheetName];
                 }
-                hasUnsavedChanges = Object.keys(editedCells).length > 0;
+                hasUnsavedChanges = Object.keys(editedCells).length > 0 || Object.keys(cellFormats).length > 0;
+                updateSaveButtonState();
+                scheduleAutoSave();
+            }
+
+            function setCellFormat(sheetName, rowIndex, colIndex, patch) {
+                if (!cellFormats[sheetName]) cellFormats[sheetName] = {};
+                const key = `${rowIndex},${colIndex}`;
+                const existing = cellFormats[sheetName][key] || {};
+                const next = Object.assign({}, existing, patch);
+                // Remove keys that became falsy
+                Object.keys(next).forEach(k => { if (!next[k]) delete next[k]; });
+                if (Object.keys(next).length === 0) {
+                    delete cellFormats[sheetName][key];
+                    if (Object.keys(cellFormats[sheetName]).length === 0) delete cellFormats[sheetName];
+                } else {
+                    cellFormats[sheetName][key] = next;
+                }
+                hasUnsavedChanges = Object.keys(editedCells).length > 0 || Object.keys(cellFormats).length > 0;
                 updateSaveButtonState();
                 scheduleAutoSave();
             }
 
             function clearAllMarks() {
                 if (Object.keys(editedCells).length === 0) return;
-                // Move all red edits to cleared (value kept, no red)
                 Object.keys(editedCells).forEach(sheetName => {
                     if (!clearedCells[sheetName]) clearedCells[sheetName] = {};
                     Object.keys(editedCells[sheetName]).forEach(key => {
@@ -1514,7 +1644,7 @@
                     });
                 });
                 editedCells = {};
-                hasUnsavedChanges = false;
+                hasUnsavedChanges = Object.keys(cellFormats).length > 0;
                 updateSaveButtonState();
                 if (currentSheetName) renderSheet(currentSheetName);
                 pushHistory();
@@ -1528,6 +1658,7 @@
                 const rows = table.querySelectorAll('tbody tr');
                 const edits = editedCells[sheetName] || {};
                 const cleared = clearedCells[sheetName] || {};
+                const formats = cellFormats[sheetName] || {};
                 rows.forEach((tr) => {
                     const cells = tr.querySelectorAll('td[contenteditable="true"]');
                     cells.forEach((td) => {
@@ -1535,11 +1666,37 @@
                         const globalCol = parseInt(td.dataset.col, 10);
                         if (isNaN(globalRow) || isNaN(globalCol)) return;
                         const key = `${globalRow},${globalCol}`;
-                        td.classList.remove('edited', 'cleared');
-                        if (edits[key] !== undefined) {
-                            td.classList.add('edited');
-                        } else if (cleared[key] !== undefined) {
-                            td.classList.add('cleared');
+                        td.classList.remove('edited', 'cleared', 'fmt-bold', 'fmt-italic');
+
+                        // Remove any previously applied inline text color from formats
+                        // (the base Excel style color is stored separately in the style attribute; we merge carefully)
+                        if (td.dataset.fmtColor) {
+                            td.style.color = '';
+                            delete td.dataset.fmtColor;
+                        }
+                        if (td.dataset.fmtBold) {
+                            td.style.fontWeight = '';
+                            delete td.dataset.fmtBold;
+                        }
+
+                        if (edits[key] !== undefined) td.classList.add('edited');
+                        else if (cleared[key] !== undefined) td.classList.add('cleared');
+
+                        // Apply user format overrides
+                        const fmt = formats[key];
+                        if (fmt) {
+                            if (fmt.bold) {
+                                td.style.fontWeight = '700';
+                                td.dataset.fmtBold = '1';
+                            }
+                            if (fmt.italic) {
+                                td.style.fontStyle = 'italic';
+                            }
+                            if (fmt.color) {
+                                td.style.color = fmt.color;
+                                td.dataset.fmtColor = fmt.color;
+                                // when red marker is present, we still want the user color to win                                // since inline style overrides class color, this works
+                            }
                         }
                     });
                 });
@@ -1581,6 +1738,7 @@
                         fileName: currentFileName,
                         fileBase64: base64,
                         editedCells: editedCells,
+                        cellFormats: cellFormats,
                         clearedCells: clearedCells,
                         originalSheetData: originalSheetData,
                         timestamp: Date.now()
@@ -1601,9 +1759,10 @@
                     const bytes = base64ToUint8Array(session.fileBase64);
                     currentFileName = session.fileName;
                     editedCells = session.editedCells || {};
+                    cellFormats = session.cellFormats || {};
                     clearedCells = session.clearedCells || {};
                     originalSheetData = session.originalSheetData || {};
-                    hasUnsavedChanges = Object.keys(editedCells).length > 0;
+                    hasUnsavedChanges = Object.keys(editedCells).length > 0 || Object.keys(cellFormats).length > 0;
                     const wb = XLSX.read(bytes, { type: 'array', cellDates: false, raw: false, cellStyles: true, dense: true, sheetStubs: true });
                     workbook = wb;
                     sheetNames = wb.SheetNames;
@@ -1685,15 +1844,17 @@
                     sheetNames = wb.SheetNames;
                     originalSheetData = {};
 
-                    // Restore both red edits AND cleared values from the cloud record
+                    // Restore all state from the cloud record
                     editedCells = {};
+                    cellFormats = {};
                     clearedCells = {};
                     if (record.edits && typeof record.edits === 'object') {
-                        // Support legacy shape (plain row,col map) and new shape ({edited, cleared})
-                        if (record.edits.edited || record.edits.cleared) {
+                        if (record.edits.edited || record.edits.cleared || record.edits.formats) {
                             editedCells = record.edits.edited || {};
                             clearedCells = record.edits.cleared || {};
+                            cellFormats = record.edits.formats || {};
                         } else {
+                            // Legacy shape: treat as edited values
                             editedCells = record.edits;
                         }
                     }
@@ -1721,9 +1882,8 @@
                     globalBanner.style.display = 'flex';
                     globalFileName.textContent = currentFileName;
                     cloudStatus.textContent = 'Global file loaded';
-                    // Restore cleared marks visually
                     if (currentSheetName) renderSheet(currentSheetName);
-                    showToast('🌐 Loaded shared file & edits', 'cloud');
+                    showToast('🌐 Loaded shared file, edits & formats', 'cloud');
                     return true;
                 } catch (err) {
                     console.error('Load global file error:', err);
@@ -1742,13 +1902,13 @@
                     const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
                     const base64 = arrayBufferToBase64(wbout);
 
-                    // Bundle BOTH edited (red) and cleared (no red) values
+                    // Bundle edited values, cleared values, and cell formats
                     const mergedEdits = {
                         edited: Object.assign({}, (globalFileRecord?.edits?.edited) || {}, editedCells),
-                        cleared: Object.assign({}, (globalFileRecord?.edits?.cleared) || {}, clearedCells)
+                        cleared: Object.assign({}, (globalFileRecord?.edits?.cleared) || {}, clearedCells),
+                        formats: Object.assign({}, (globalFileRecord?.edits?.formats) || {}, cellFormats)
                     };
 
-                    // Replace all rows (single global file model)
                     const { error: delError } = await supabase
                         .from('shared_files')
                         .delete()
@@ -1771,6 +1931,7 @@
                     globalFileRecord = data;
                     isGlobalMode = true;
                     editedCells = {};
+                    cellFormats = {};
                     clearedCells = {};
                     hasUnsavedChanges = false;
                     updateSaveButtonState();
@@ -1781,7 +1942,7 @@
                     globalBanner.style.display = 'flex';
                     globalFileName.textContent = currentFileName;
                     cloudStatus.textContent = 'Published globally';
-                    showToast('🌐 Published! All visitors will now see this file & edits', 'cloud');
+                    showToast('🌐 Published! All visitors see file, values, bold & colors', 'cloud');
                     statusBadge.textContent = `Global · ${currentFileName}`;
                 } catch (err) {
                     console.error('Publish error:', err);
@@ -1794,15 +1955,11 @@
             }
 
             async function tryAutoLoadGlobal() {
-                // Always try to load the shared file — even if a local session exists,
-                // the shared file is the source of truth for "all visitors"
                 const record = await fetchGlobalFile();
                 if (record && record.file_data) {
                     await loadGlobalFileIntoApp(record);
-                    // Hide local session banner since global file is now shown
                     sessionBanner.style.display = 'none';
                 } else {
-                    // No global file — show local session banner if any
                     checkForSession();
                 }
             }
@@ -1901,6 +2058,11 @@
                 const cells = tableContent.querySelectorAll('td[contenteditable="true"]');
                 cells.forEach(cell => {
                     cell.addEventListener('dragstart', (e) => e.preventDefault());
+                    cell.addEventListener('focus', () => {
+                        selectedCell = cell;
+                        selectedCellKey = cellKey(sheetName, cell.dataset.row, cell.dataset.col);
+                        syncFormatButtons(sheetName);
+                    });
                     cell.addEventListener('blur', () => {
                         const newValue = cell.innerText.trim();
                         const rowIdx = parseInt(cell.dataset.row, 10);
@@ -1967,6 +2129,72 @@
                 return s;
             }
 
+            // ============ FORMAT BUTTONS ============
+            function getSelectedCellInfo() {
+                if (!selectedCell || !currentSheetName) return null;
+                const rowIdx = parseInt(selectedCell.dataset.row, 10);
+                const colIdx = parseInt(selectedCell.dataset.col, 10);
+                if (isNaN(rowIdx) || isNaN(colIdx)) return null;
+                return { sheet: currentSheetName, row: rowIdx, col: colIdx, el: selectedCell };
+            }
+
+            function syncFormatButtons(sheetName) {
+                const info = getSelectedCellInfo();
+                if (!info) {
+                    btnBold.classList.remove('format-active');
+                    return;
+                }
+                const key = `${info.row},${info.col}`;
+                const fmt = (cellFormats[sheetName] || {})[key] || {};
+                if (fmt.bold) btnBold.classList.add('format-active');
+                else btnBold.classList.remove('format-active');
+                if (fmt.color) {
+                    colorSwatch.style.background = fmt.color;
+                } else {
+                    colorSwatch.style.background = '#b91c1c';
+                }
+            }
+
+            btnBold.addEventListener('click', () => {
+                const info = getSelectedCellInfo();
+                if (!info) { showToast('Tap a cell first', 'error'); return; }
+                const key = `${info.row},${info.col}`;
+                const existing = (cellFormats[info.sheet] || {})[key] || {};
+                setCellFormat(info.sheet, info.row, info.col, { bold: !existing.bold });
+                applyEditHighlights(info.sheet);
+                syncFormatButtons(info.sheet);
+                pushHistory();
+                // Re-focus cell so further edits work
+                info.el.focus();
+            });
+
+            btnColor.addEventListener('click', (e) => {
+                e.stopPropagation();
+                colorMenu.classList.toggle('show');
+            });
+
+            colorMenu.querySelectorAll('.sw').forEach(sw => {
+                sw.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const color = sw.dataset.color;
+                    const info = getSelectedCellInfo();
+                    if (!info) { showToast('Tap a cell first', 'error'); colorMenu.classList.remove('show'); return; }
+                    setCellFormat(info.sheet, info.row, info.col, { color });
+                    colorSwatch.style.background = color;
+                    applyEditHighlights(info.sheet);
+                    syncFormatButtons(info.sheet);
+                    pushHistory();
+                    colorMenu.classList.remove('show');
+                    info.el.focus();
+                });
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!colorMenu.contains(e.target) && e.target !== btnColor) {
+                    colorMenu.classList.remove('show');
+                }
+            });
+
             // ============ TABS ============
             function setActiveSheet(sheetName) {
                 if (!workbook || !sheetName) return;
@@ -2011,6 +2239,7 @@
                 try {
                     originalSheetData = {};
                     editedCells = {};
+                    cellFormats = {};
                     clearedCells = {};
                     styleMap = {};
                     mergedMap = {};
@@ -2047,8 +2276,6 @@
                     updateQuickNav();
                     resetHistory();
                     autoSaveNow();
-
-                    // Auto-publish a freshly opened file so all visitors see it
                     publishToGlobal();
                 } catch (err) {
                     console.error(err);
@@ -2061,8 +2288,9 @@
             // ============ REVERT ============
             function revertAll() {
                 if (!workbook) return;
-                if (!confirm('Revert all unsaved changes? This will remove all red markers and restore original values.')) return;
+                if (!confirm('Revert all unsaved changes? This will remove all red markers, bold text, and colors.')) return;
                 editedCells = {};
+                cellFormats = {};
                 clearedCells = {};
                 hasUnsavedChanges = false;
                 updateSaveButtonState();
@@ -2079,6 +2307,7 @@
                 sheetNames = [];
                 originalSheetData = {};
                 editedCells = {};
+                cellFormats = {};
                 clearedCells = {};
                 styleMap = {};
                 mergedMap = {};
@@ -2090,6 +2319,8 @@
                 currentFileName = '';
                 isGlobalMode = false;
                 globalFileRecord = null;
+                selectedCell = null;
+                selectedCellKey = null;
                 updateSaveButtonState();
                 sheetTabs.style.display = 'none';
                 sheetTabs.innerHTML = '';
@@ -2155,6 +2386,17 @@
                     e.preventDefault(); undo();
                 } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) {
                     e.preventDefault(); redo();
+                } else if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+                    e.preventDefault();
+                    const info = getSelectedCellInfo();
+                    if (info) {
+                        const key = `${info.row},${info.col}`;
+                        const existing = (cellFormats[info.sheet] || {})[key] || {};
+                        setCellFormat(info.sheet, info.row, info.col, { bold: !existing.bold });
+                        applyEditHighlights(info.sheet);
+                        syncFormatButtons(info.sheet);
+                        pushHistory();
+                    }
                 }
             });
 
