@@ -633,15 +633,11 @@
             pointer-events: none;
         }
 
-        /* Cell-level inline formatting overrides — must win over .edited styling */
         .excel-table td.fmt-bold {
             font-weight: 700 !important;
         }
         .excel-table td.fmt-italic {
             font-style: italic !important;
-        }
-        .excel-table td.fmt-color {
-            /* color applied via inline style — class just a marker */
         }
 
         .excel-table td.cleared {
@@ -1093,7 +1089,7 @@
         </div>
 
         <div id="global-banner" class="global-banner" style="display: none;">
-            <span>🌐 <strong>Shared file:</strong> <span id="global-file-name"></span> — everyone sees this file, its edits, bold text and colors.</span>
+            <span>🌐 <strong>Shared file:</strong> <span id="global-file-name"></span> — everyone sees this file, its red edit markers, bold text and colors.</span>
             <span class="badge">GLOBAL</span>
         </div>
 
@@ -1226,17 +1222,16 @@
             let workbook = null;
             let currentSheetName = '';
             let sheetNames = [];
-            let originalSheetData = {};
-            let editedCells = {};       // { sheet: { "r,c": newValue } }
-            let cellFormats = {};       // { sheet: { "r,c": { bold:true, color:"#..." } } }
-            let clearedCells = {};      // { sheet: { "r,c": value } } — value kept, no red
+            let originalSheetData = {};   // { sheet: [[originalValue, ...], ...] } — from the uploaded file
+            let editedCells = {};         // { sheet: { "r,c": newValue } } — red marker shown
+            let cellFormats = {};         // { sheet: { "r,c": { bold, color } } }
+            let clearedCells = {};        // { sheet: { "r,c": value } } — value kept, no red
             let hasUnsavedChanges = false;
             let currentFileName = '';
             let isGlobalMode = false;
             let globalFileRecord = null;
 
-            let selectedCell = null;    // DOM element of currently focused cell
-            let selectedCellKey = null; // "sheet|r,c"
+            let selectedCell = null;
 
             let history = [];
             let historyIndex = -1;
@@ -1251,6 +1246,7 @@
             let mergedMap = {};
 
             let autoSaveTimer = null;
+            let isInternalRender = false;
 
             // ============ UTILS ============
             function showToast(message, type = '') {
@@ -1315,7 +1311,6 @@
                 for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
                 return bytes;
             }
-            function cellKey(sheet, r, c) { return `${sheet}|${r},${c}`; }
 
             // ============ HISTORY ============
             function pushHistory() {
@@ -1351,7 +1346,6 @@
                     showToast('Undo');
                 }
             }
-
             function redo() {
                 if (historyIndex < history.length - 1) {
                     historyIndex++;
@@ -1359,12 +1353,10 @@
                     showToast('Redo');
                 }
             }
-
             function updateHistoryButtons() {
                 btnUndo.disabled = historyIndex <= 0;
                 btnRedo.disabled = historyIndex >= history.length - 1;
             }
-
             function resetHistory() {
                 history = [];
                 historyIndex = -1;
@@ -1389,10 +1381,7 @@
                 if (sheet['!merges']) {
                     sheet['!merges'].forEach(m => {
                         const key = `${m.s.r},${m.s.c}`;
-                        merges[key] = {
-                            rowspan: m.e.r - m.s.r + 1,
-                            colspan: m.e.c - m.s.c + 1
-                        };
+                        merges[key] = { rowspan: m.e.r - m.s.r + 1, colspan: m.e.c - m.s.c + 1 };
                     });
                 }
 
@@ -1422,11 +1411,6 @@
                                 const fc = argbToRgb(font.color.rgb);
                                 if (fc) styleParts.push(`color:${fc}`);
                             }
-                            if (font.color && font.color.theme !== undefined && !font.color.rgb) {
-                                const themeMap = {0:'#000000',1:'#ffffff',2:'#1f497d',3:'#eeece1',4:'#4f81bd',5:'#c0504d',6:'#9bbb59',7:'#8064a2',8:'#4bacc6',9:'#f79646'};
-                                const tc = themeMap[font.color.theme];
-                                if (tc) styleParts.push(`color:${tc}`);
-                            }
                             if (font.name) styleParts.push(`font-family:'${font.name}', 'Inter', sans-serif`);
                             if (font.sz) styleParts.push(`font-size:${font.sz}pt`);
                             if (font.bold) styleParts.push('font-weight:700');
@@ -1451,31 +1435,22 @@
                             const borderSide = (side, cssProp) => {
                                 if (!side) return;
                                 if (!side.style || side.style === 'none') return;
-                                let cssStyle = 'solid';
-                                let cssWidth = '1px';
+                                let cssStyle = 'solid', cssWidth = '1px';
                                 switch (side.style) {
-                                    case 'thin': cssWidth = '1px'; cssStyle = 'solid'; break;
-                                    case 'medium': cssWidth = '2px'; cssStyle = 'solid'; break;
-                                    case 'thick': cssWidth = '3px'; cssStyle = 'solid'; break;
-                                    case 'double': cssWidth = '3px'; cssStyle = 'double'; break;
-                                    case 'dashed': cssWidth = '1px'; cssStyle = 'dashed'; break;
-                                    case 'dotted': cssWidth = '1px'; cssStyle = 'dotted'; break;
-                                    case 'hair': cssWidth = '1px'; cssStyle = 'dotted'; break;
-                                    case 'mediumDashed': cssWidth = '2px'; cssStyle = 'dashed'; break;
-                                    case 'mediumDashDot': cssWidth = '2px'; cssStyle = 'dashed'; break;
-                                    case 'mediumDashDotDot': cssWidth = '2px'; cssStyle = 'dashed'; break;
-                                    case 'slantDashDot': cssWidth = '2px'; cssStyle = 'dashed'; break;
-                                    case 'dashDot': cssWidth = '1px'; cssStyle = 'dashed'; break;
-                                    case 'dashDotDot': cssWidth = '1px'; cssStyle = 'dashed'; break;
-                                    default: cssWidth = '1px'; cssStyle = 'solid';
+                                    case 'thin': cssWidth='1px'; cssStyle='solid'; break;
+                                    case 'medium': cssWidth='2px'; cssStyle='solid'; break;
+                                    case 'thick': cssWidth='3px'; cssStyle='solid'; break;
+                                    case 'double': cssWidth='3px'; cssStyle='double'; break;
+                                    case 'dashed': cssWidth='1px'; cssStyle='dashed'; break;
+                                    case 'dotted': cssWidth='1px'; cssStyle='dotted'; break;
+                                    case 'hair': cssWidth='1px'; cssStyle='dotted'; break;
+                                    case 'mediumDashed': cssWidth='2px'; cssStyle='dashed'; break;
+                                    default: cssWidth='1px'; cssStyle='solid';
                                 }
                                 let color = '#000000';
                                 if (side.color && side.color.rgb) {
                                     const c = argbToRgb(side.color.rgb);
                                     if (c) color = c;
-                                } else if (side.color && side.color.theme !== undefined) {
-                                    const themeMap = {0:'#000000',1:'#ffffff',2:'#1f497d',3:'#eeece1',4:'#4f81bd',5:'#c0504d',6:'#9bbb59',7:'#8064a2',8:'#4bacc6',9:'#f79646'};
-                                    color = themeMap[side.color.theme] || '#000000';
                                 }
                                 styleParts.push(`${cssProp}:${cssWidth} ${cssStyle} ${color}`);
                             };
@@ -1485,9 +1460,7 @@
                             borderSide(b.right, 'border-right');
                         }
 
-                        if (styleParts.length > 0) {
-                            styles[`${R},${C}`] = styleParts.join(';');
-                        }
+                        if (styleParts.length > 0) styles[`${R},${C}`] = styleParts.join(';');
                     }
                 }
                 return { styles, merges };
@@ -1495,21 +1468,12 @@
 
             // ============ QUICK NAV ============
             function updateQuickNav() {
-                if (!workbook || !currentSheetName) {
-                    quickNav.classList.remove('visible');
-                    return;
-                }
+                if (!workbook || !currentSheetName) { quickNav.classList.remove('visible'); return; }
                 quickNav.classList.add('visible');
                 const hasScroll = tableContainer.scrollHeight > tableContainer.clientHeight + 10;
-                if (!hasScroll) {
-                    navTop.disabled = true;
-                    navBottom.disabled = true;
-                    return;
-                }
-                const atTop = tableContainer.scrollTop <= 5;
-                const atBottom = tableContainer.scrollTop + tableContainer.clientHeight >= tableContainer.scrollHeight - 5;
-                navTop.disabled = atTop;
-                navBottom.disabled = atBottom;
+                if (!hasScroll) { navTop.disabled = true; navBottom.disabled = true; return; }
+                navTop.disabled = tableContainer.scrollTop <= 5;
+                navBottom.disabled = tableContainer.scrollTop + tableContainer.clientHeight >= tableContainer.scrollHeight - 5;
             }
             tableContainer.addEventListener('scroll', updateQuickNav, { passive: true });
             window.addEventListener('resize', () => { updateQuickNav(); updateColNavUI(); });
@@ -1519,17 +1483,13 @@
             // ============ COLUMN NAV ============
             function updateColNavUI() {
                 if (!workbook || !currentSheetName || totalColumns === 0 || totalColumns <= 25) {
-                    colNavBar.classList.add('hidden');
-                    return;
+                    colNavBar.classList.add('hidden'); return;
                 }
                 colNavBar.classList.remove('hidden');
                 if (colWindowStart < 0) colWindowStart = 0;
-                if (colWindowStart + colWindowSize > totalColumns) {
-                    colWindowStart = Math.max(0, totalColumns - colWindowSize);
-                }
+                if (colWindowStart + colWindowSize > totalColumns) colWindowStart = Math.max(0, totalColumns - colWindowSize);
                 if (colWindowStart >= totalColumns) colWindowStart = Math.max(0, totalColumns - 1);
                 if (colWindowSize > totalColumns) colWindowSize = totalColumns;
-
                 const displayStart = colWindowStart + 1;
                 const displayEnd = Math.min(colWindowStart + colWindowSize, totalColumns);
                 colStartInput.value = displayStart;
@@ -1542,20 +1502,16 @@
                 colNext.disabled = (colWindowStart + colWindowSize) >= totalColumns;
                 colLast.disabled = (colWindowStart + colWindowSize) >= totalColumns;
             }
-
             function applyColumnWindow(newStart, newSize) {
                 if (!workbook || !currentSheetName) return;
                 if (newSize !== undefined) colWindowSize = Math.max(1, Math.min(newSize, totalColumns));
                 if (newStart !== undefined) colWindowStart = newStart;
                 if (colWindowStart < 0) colWindowStart = 0;
-                if (colWindowStart + colWindowSize > totalColumns) {
-                    colWindowStart = Math.max(0, totalColumns - colWindowSize);
-                }
+                if (colWindowStart + colWindowSize > totalColumns) colWindowStart = Math.max(0, totalColumns - colWindowSize);
                 isWindowed = !(colWindowStart === 0 && colWindowSize >= totalColumns);
                 renderCurrentSheet();
                 updateColNavUI();
             }
-
             colFirst.addEventListener('click', () => applyColumnWindow(0));
             colPrev.addEventListener('click', () => {
                 const step = Math.max(1, Math.floor(colWindowSize / 2));
@@ -1566,35 +1522,27 @@
                 applyColumnWindow(Math.min(totalColumns - colWindowSize, colWindowStart + step));
             });
             colLast.addEventListener('click', () => applyColumnWindow(Math.max(0, totalColumns - colWindowSize)));
-
             colStartInput.addEventListener('change', () => {
-                let val = parseInt(colStartInput.value, 10);
-                if (isNaN(val)) val = 1;
+                let val = parseInt(colStartInput.value, 10); if (isNaN(val)) val = 1;
                 val = Math.max(1, Math.min(val, totalColumns));
                 let endVal = parseInt(colEndInput.value, 10);
                 if (isNaN(endVal) || endVal < val) endVal = Math.min(val + DEFAULT_WINDOW - 1, totalColumns);
                 endVal = Math.min(endVal, totalColumns);
-                colWindowStart = val - 1;
-                colWindowSize = endVal - val + 1;
+                colWindowStart = val - 1; colWindowSize = endVal - val + 1;
                 applyColumnWindow(colWindowStart, colWindowSize);
             });
             colEndInput.addEventListener('change', () => {
-                let endVal = parseInt(colEndInput.value, 10);
-                if (isNaN(endVal)) endVal = totalColumns;
+                let endVal = parseInt(colEndInput.value, 10); if (isNaN(endVal)) endVal = totalColumns;
                 endVal = Math.max(1, Math.min(endVal, totalColumns));
                 let startVal = parseInt(colStartInput.value, 10);
                 if (isNaN(startVal) || startVal > endVal) startVal = Math.max(1, endVal - DEFAULT_WINDOW + 1);
                 startVal = Math.max(1, startVal);
-                colWindowStart = startVal - 1;
-                colWindowSize = endVal - startVal + 1;
+                colWindowStart = startVal - 1; colWindowSize = endVal - startVal + 1;
                 applyColumnWindow(colWindowStart, colWindowSize);
             });
             colShowAll.addEventListener('click', () => {
-                colWindowStart = 0;
-                colWindowSize = totalColumns;
-                isWindowed = false;
-                renderCurrentSheet();
-                updateColNavUI();
+                colWindowStart = 0; colWindowSize = totalColumns; isWindowed = false;
+                renderCurrentSheet(); updateColNavUI();
             });
 
             // ============ EDIT TRACKING ============
@@ -1622,7 +1570,6 @@
                 const key = `${rowIndex},${colIndex}`;
                 const existing = cellFormats[sheetName][key] || {};
                 const next = Object.assign({}, existing, patch);
-                // Remove keys that became falsy
                 Object.keys(next).forEach(k => { if (!next[k]) delete next[k]; });
                 if (Object.keys(next).length === 0) {
                     delete cellFormats[sheetName][key];
@@ -1667,36 +1614,18 @@
                         if (isNaN(globalRow) || isNaN(globalCol)) return;
                         const key = `${globalRow},${globalCol}`;
                         td.classList.remove('edited', 'cleared', 'fmt-bold', 'fmt-italic');
-
-                        // Remove any previously applied inline text color from formats
-                        // (the base Excel style color is stored separately in the style attribute; we merge carefully)
-                        if (td.dataset.fmtColor) {
-                            td.style.color = '';
-                            delete td.dataset.fmtColor;
-                        }
-                        if (td.dataset.fmtBold) {
-                            td.style.fontWeight = '';
-                            delete td.dataset.fmtBold;
-                        }
+                        if (td.dataset.fmtColor) { td.style.color = ''; delete td.dataset.fmtColor; }
+                        if (td.dataset.fmtBold) { td.style.fontWeight = ''; delete td.dataset.fmtBold; }
+                        if (td.dataset.fmtItalic) { td.style.fontStyle = ''; delete td.dataset.fmtItalic; }
 
                         if (edits[key] !== undefined) td.classList.add('edited');
                         else if (cleared[key] !== undefined) td.classList.add('cleared');
 
-                        // Apply user format overrides
                         const fmt = formats[key];
                         if (fmt) {
-                            if (fmt.bold) {
-                                td.style.fontWeight = '700';
-                                td.dataset.fmtBold = '1';
-                            }
-                            if (fmt.italic) {
-                                td.style.fontStyle = 'italic';
-                            }
-                            if (fmt.color) {
-                                td.style.color = fmt.color;
-                                td.dataset.fmtColor = fmt.color;
-                                // when red marker is present, we still want the user color to win                                // since inline style overrides class color, this works
-                            }
+                            if (fmt.bold) { td.style.fontWeight = '700'; td.dataset.fmtBold = '1'; }
+                            if (fmt.italic) { td.style.fontStyle = 'italic'; td.dataset.fmtItalic = '1'; }
+                            if (fmt.color) { td.style.color = fmt.color; td.dataset.fmtColor = fmt.color; }
                         }
                     });
                 });
@@ -1707,7 +1636,6 @@
                 if (autoSaveTimer) clearTimeout(autoSaveTimer);
                 autoSaveTimer = setTimeout(autoSaveNow, 1000);
             }
-
             function autoSaveNow() {
                 if (!workbook || !currentFileName) return;
                 try {
@@ -1731,7 +1659,6 @@
                         if (sheet['!merges']) newSheet['!merges'] = sheet['!merges'];
                         wbCopy.Sheets[sheetName] = newSheet;
                     });
-
                     const wbout = XLSX.write(wbCopy, { bookType: 'xlsx', type: 'array' });
                     const base64 = arrayBufferToBase64(wbout);
                     const sessionData = {
@@ -1766,8 +1693,7 @@
                     const wb = XLSX.read(bytes, { type: 'array', cellDates: false, raw: false, cellStyles: true, dense: true, sheetStubs: true });
                     workbook = wb;
                     sheetNames = wb.SheetNames;
-                    styleMap = {};
-                    mergedMap = {};
+                    styleMap = {}; mergedMap = {};
                     sheetNames.forEach(name => {
                         const sheet = wb.Sheets[name];
                         if (sheet) {
@@ -1785,12 +1711,8 @@
                     resetHistory();
                     sessionBanner.style.display = 'none';
                     return true;
-                } catch (err) {
-                    console.error('Session restore failed:', err);
-                    return false;
-                }
+                } catch (err) { console.error('Session restore failed:', err); return false; }
             }
-
             function checkForSession() {
                 const saved = localStorage.getItem('hExcelSession');
                 if (saved) {
@@ -1800,7 +1722,6 @@
                     } catch (e) {}
                 }
             }
-
             restoreSessionBtn.addEventListener('click', () => {
                 if (restoreLocalSession()) showToast('Session restored', 'success');
                 else { showToast('Failed to restore session', 'error'); sessionBanner.style.display = 'none'; }
@@ -1823,10 +1744,7 @@
                         .maybeSingle();
                     if (error && error.code !== 'PGRST116') throw error;
                     return data || null;
-                } catch (err) {
-                    console.warn('Fetch global file error:', err);
-                    return null;
-                }
+                } catch (err) { console.warn('Fetch global file error:', err); return null; }
             }
 
             async function loadGlobalFileIntoApp(record) {
@@ -1843,26 +1761,24 @@
                     workbook = wb;
                     sheetNames = wb.SheetNames;
                     originalSheetData = {};
-
-                    // Restore all state from the cloud record
                     editedCells = {};
                     cellFormats = {};
                     clearedCells = {};
+
+                    // Restore all shared state from the cloud record
                     if (record.edits && typeof record.edits === 'object') {
                         if (record.edits.edited || record.edits.cleared || record.edits.formats) {
                             editedCells = record.edits.edited || {};
                             clearedCells = record.edits.cleared || {};
                             cellFormats = record.edits.formats || {};
                         } else {
-                            // Legacy shape: treat as edited values
                             editedCells = record.edits;
                         }
                     }
 
                     hasUnsavedChanges = false;
 
-                    styleMap = {};
-                    mergedMap = {};
+                    styleMap = {}; mergedMap = {};
                     sheetNames.forEach(name => {
                         const sheet = wb.Sheets[name];
                         if (sheet) {
@@ -1882,13 +1798,13 @@
                     globalBanner.style.display = 'flex';
                     globalFileName.textContent = currentFileName;
                     cloudStatus.textContent = 'Global file loaded';
+
+                    // IMPORTANT: Re-render so red markers, bold text, and colors appear for everyone
                     if (currentSheetName) renderSheet(currentSheetName);
-                    showToast('🌐 Loaded shared file, edits & formats', 'cloud');
+
+                    showToast('🌐 Loaded shared file, red edits & formats', 'cloud');
                     return true;
-                } catch (err) {
-                    console.error('Load global file error:', err);
-                    return false;
-                }
+                } catch (err) { console.error('Load global file error:', err); return false; }
             }
 
             async function publishToGlobal() {
@@ -1899,10 +1815,33 @@
                 cloudStatus.textContent = 'Publishing…';
 
                 try {
-                    const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+                    // Write the workbook WITH the current edits already applied, so any visitor
+                    // that loads this file gets the actual values from the start.
+                    const wbForPublish = XLSX.read(XLSX.write(workbook, { bookType: 'xlsx', type: 'array' }), {
+                        type: 'array', cellStyles: true, dense: true
+                    });
+                    Object.keys(editedCells).forEach(sheetName => {
+                        const sheet = wbForPublish.Sheets[sheetName];
+                        if (!sheet) return;
+                        const currentData = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false });
+                        const edits = editedCells[sheetName];
+                        Object.keys(edits).forEach(key => {
+                            const [rowStr, colStr] = key.split(',');
+                            const rowIdx = parseInt(rowStr, 10);
+                            const colIdx = parseInt(colStr, 10);
+                            while (currentData.length <= rowIdx) currentData.push([]);
+                            while (currentData[rowIdx].length <= colIdx) currentData[rowIdx].push('');
+                            currentData[rowIdx][colIdx] = edits[key];
+                        });
+                        const newSheet = XLSX.utils.aoa_to_sheet(currentData);
+                        if (sheet['!merges']) newSheet['!merges'] = sheet['!merges'];
+                        wbForPublish.Sheets[sheetName] = newSheet;
+                    });
+
+                    const wbout = XLSX.write(wbForPublish, { bookType: 'xlsx', type: 'array' });
                     const base64 = arrayBufferToBase64(wbout);
 
-                    // Bundle edited values, cleared values, and cell formats
+                    // Bundle the red-marked cells, cleared cells, and formats
                     const mergedEdits = {
                         edited: Object.assign({}, (globalFileRecord?.edits?.edited) || {}, editedCells),
                         cleared: Object.assign({}, (globalFileRecord?.edits?.cleared) || {}, clearedCells),
@@ -1930,9 +1869,9 @@
 
                     globalFileRecord = data;
                     isGlobalMode = true;
-                    editedCells = {};
-                    cellFormats = {};
-                    clearedCells = {};
+
+                    // CRITICAL: Do NOT clear editedCells / cellFormats after publish.
+                    // Keeping them lets the publisher still see the red markers and formats.
                     hasUnsavedChanges = false;
                     updateSaveButtonState();
                     if (currentSheetName) renderSheet(currentSheetName);
@@ -1942,7 +1881,7 @@
                     globalBanner.style.display = 'flex';
                     globalFileName.textContent = currentFileName;
                     cloudStatus.textContent = 'Published globally';
-                    showToast('🌐 Published! All visitors see file, values, bold & colors', 'cloud');
+                    showToast('🌐 Published! All visitors now see red edits, bold & colors', 'cloud');
                     statusBadge.textContent = `Global · ${currentFileName}`;
                 } catch (err) {
                     console.error('Publish error:', err);
@@ -2000,13 +1939,16 @@
                 let startCol = 0;
                 let endCol = maxCols;
                 const showColumnNav = maxCols > 25;
-
                 if (showColumnNav && (isWindowed || colWindowSize < maxCols)) {
                     startCol = colWindowStart;
                     endCol = Math.min(colWindowStart + colWindowSize, maxCols);
                 }
-
                 if (endCol - startCol <= 0) { startCol = 0; endCol = Math.min(DEFAULT_WINDOW, maxCols); }
+
+                // Apply per-cell edits & cleared values into the rendered values
+                const edits = editedCells[sheetName] || {};
+                const cleared = clearedCells[sheetName] || {};
+                const formats = cellFormats[sheetName] || {};
 
                 let html = '<table class="excel-table">';
                 html += '<thead><tr>';
@@ -2024,8 +1966,12 @@
                     html += '<tr>';
                     html += `<td class="row-num">${r}</td>`;
                     for (let c = startCol; c < endCol; c++) {
-                        const val = normalizedRows[r]?.[c] ?? '';
                         const key = `${r},${c}`;
+                        // Value = edit if present, cleared if present, else original
+                        let val = normalizedRows[r]?.[c] ?? '';
+                        if (edits[key] !== undefined) val = edits[key];
+                        else if (cleared[key] !== undefined) val = cleared[key];
+
                         const cellStyle = styles[key] || '';
 
                         let mergeAttr = '';
@@ -2045,7 +1991,15 @@
                         }
                         if (isMergedCover) continue;
 
-                        html += `<td contenteditable="true" data-row="${r}" data-col="${c}" style="${cellStyle}"${mergeAttr}>${escapeHtml(String(val))}</td>`;
+                        // Apply format overrides directly in inline style so they show up immediately
+                        const fmt = formats[key] || {};
+                        let extraStyle = '';
+                        if (fmt.bold) extraStyle += 'font-weight:700;';
+                        if (fmt.italic) extraStyle += 'font-style:italic;';
+                        if (fmt.color) extraStyle += `color:${fmt.color};`;
+                        const mergedStyle = (cellStyle ? cellStyle + ';' : '') + extraStyle;
+
+                        html += `<td contenteditable="true" data-row="${r}" data-col="${c}" style="${mergedStyle}"${mergeAttr}>${escapeHtml(String(val))}</td>`;
                     }
                     html += '</tr>';
                 }
@@ -2060,7 +2014,6 @@
                     cell.addEventListener('dragstart', (e) => e.preventDefault());
                     cell.addEventListener('focus', () => {
                         selectedCell = cell;
-                        selectedCellKey = cellKey(sheetName, cell.dataset.row, cell.dataset.col);
                         syncFormatButtons(sheetName);
                     });
                     cell.addEventListener('blur', () => {
@@ -2068,13 +2021,11 @@
                         const rowIdx = parseInt(cell.dataset.row, 10);
                         const colIdx = parseInt(cell.dataset.col, 10);
                         if (!isNaN(rowIdx) && !isNaN(colIdx)) {
-                            const before = editedCells[sheetName]?.[`${rowIdx},${colIdx}`];
                             const original = originalSheetData[sheetName]?.[rowIdx]?.[colIdx] ?? '';
-                            if (String(newValue) !== String(original) || before !== undefined) {
-                                markEdited(sheetName, rowIdx, colIdx, newValue);
-                                applyEditHighlights(sheetName);
-                                pushHistory();
-                            }
+                            // Always record the edit so we know whether it differs from original
+                            markEdited(sheetName, rowIdx, colIdx, newValue);
+                            applyEditHighlights(sheetName);
+                            pushHistory();
                         }
                     });
                     cell.addEventListener('keydown', (e) => {
@@ -2098,14 +2049,13 @@
                     });
                 });
 
+                // Now apply the marker classes (edited/cleared) after DOM is built
                 applyEditHighlights(sheetName);
 
                 if (showColumnNav) {
                     colNavBar.classList.remove('hidden');
                     if (!isWindowed && colWindowSize >= maxCols && maxCols > DEFAULT_WINDOW * 2) {
-                        colWindowSize = DEFAULT_WINDOW;
-                        colWindowStart = 0;
-                        isWindowed = true;
+                        colWindowSize = DEFAULT_WINDOW; colWindowStart = 0; isWindowed = true;
                         setTimeout(() => { renderSheet(sheetName); updateColNavUI(); }, 0);
                         return;
                     }
@@ -2119,13 +2069,8 @@
             }
 
             function colLetter(n) {
-                let s = '';
-                n = n + 1;
-                while (n > 0) {
-                    const m = (n - 1) % 26;
-                    s = String.fromCharCode(65 + m) + s;
-                    n = Math.floor((n - 1) / 26);
-                }
+                let s = ''; n = n + 1;
+                while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); }
                 return s;
             }
 
@@ -2137,24 +2082,15 @@
                 if (isNaN(rowIdx) || isNaN(colIdx)) return null;
                 return { sheet: currentSheetName, row: rowIdx, col: colIdx, el: selectedCell };
             }
-
             function syncFormatButtons(sheetName) {
                 const info = getSelectedCellInfo();
-                if (!info) {
-                    btnBold.classList.remove('format-active');
-                    return;
-                }
+                if (!info) { btnBold.classList.remove('format-active'); return; }
                 const key = `${info.row},${info.col}`;
                 const fmt = (cellFormats[sheetName] || {})[key] || {};
-                if (fmt.bold) btnBold.classList.add('format-active');
-                else btnBold.classList.remove('format-active');
-                if (fmt.color) {
-                    colorSwatch.style.background = fmt.color;
-                } else {
-                    colorSwatch.style.background = '#b91c1c';
-                }
+                if (fmt.bold) btnBold.classList.add('format-active'); else btnBold.classList.remove('format-active');
+                if (fmt.color) colorSwatch.style.background = fmt.color;
+                else colorSwatch.style.background = '#b91c1c';
             }
-
             btnBold.addEventListener('click', () => {
                 const info = getSelectedCellInfo();
                 if (!info) { showToast('Tap a cell first', 'error'); return; }
@@ -2164,15 +2100,12 @@
                 applyEditHighlights(info.sheet);
                 syncFormatButtons(info.sheet);
                 pushHistory();
-                // Re-focus cell so further edits work
                 info.el.focus();
             });
-
             btnColor.addEventListener('click', (e) => {
                 e.stopPropagation();
                 colorMenu.classList.toggle('show');
             });
-
             colorMenu.querySelectorAll('.sw').forEach(sw => {
                 sw.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -2188,20 +2121,15 @@
                     info.el.focus();
                 });
             });
-
             document.addEventListener('click', (e) => {
-                if (!colorMenu.contains(e.target) && e.target !== btnColor) {
-                    colorMenu.classList.remove('show');
-                }
+                if (!colorMenu.contains(e.target) && e.target !== btnColor) colorMenu.classList.remove('show');
             });
 
             // ============ TABS ============
             function setActiveSheet(sheetName) {
                 if (!workbook || !sheetName) return;
                 currentSheetName = sheetName;
-                colWindowStart = 0;
-                colWindowSize = DEFAULT_WINDOW;
-                isWindowed = false;
+                colWindowStart = 0; colWindowSize = DEFAULT_WINDOW; isWindowed = false;
                 sheetTabs.querySelectorAll('.sheet-tab').forEach(tab => {
                     tab.classList.toggle('active', tab.dataset.sheet === sheetName);
                 });
@@ -2210,7 +2138,6 @@
                 updateColNavUI();
                 updateQuickNav();
             }
-
             function buildSheetTabs() {
                 if (!workbook || !sheetNames.length) { sheetTabs.style.display = 'none'; return; }
                 sheetTabs.innerHTML = '';
@@ -2241,8 +2168,7 @@
                     editedCells = {};
                     cellFormats = {};
                     clearedCells = {};
-                    styleMap = {};
-                    mergedMap = {};
+                    styleMap = {}; mergedMap = {};
                     hasUnsavedChanges = false;
                     isGlobalMode = false;
                     globalFileRecord = null;
@@ -2276,6 +2202,7 @@
                     updateQuickNav();
                     resetHistory();
                     autoSaveNow();
+                    // Auto-publish so all visitors see the file + red marks
                     publishToGlobal();
                 } catch (err) {
                     console.error(err);
@@ -2289,9 +2216,7 @@
             function revertAll() {
                 if (!workbook) return;
                 if (!confirm('Revert all unsaved changes? This will remove all red markers, bold text, and colors.')) return;
-                editedCells = {};
-                cellFormats = {};
-                clearedCells = {};
+                editedCells = {}; cellFormats = {}; clearedCells = {};
                 hasUnsavedChanges = false;
                 updateSaveButtonState();
                 if (currentSheetName) renderSheet(currentSheetName);
@@ -2302,42 +2227,26 @@
 
             // ============ RESET ============
             function resetUI() {
-                workbook = null;
-                currentSheetName = '';
-                sheetNames = [];
-                originalSheetData = {};
-                editedCells = {};
-                cellFormats = {};
-                clearedCells = {};
-                styleMap = {};
-                mergedMap = {};
+                workbook = null; currentSheetName = ''; sheetNames = [];
+                originalSheetData = {}; editedCells = {}; cellFormats = {}; clearedCells = {};
+                styleMap = {}; mergedMap = {};
                 hasUnsavedChanges = false;
-                totalColumns = 0;
-                colWindowStart = 0;
-                colWindowSize = DEFAULT_WINDOW;
-                isWindowed = false;
-                currentFileName = '';
-                isGlobalMode = false;
-                globalFileRecord = null;
+                totalColumns = 0; colWindowStart = 0; colWindowSize = DEFAULT_WINDOW; isWindowed = false;
+                currentFileName = ''; isGlobalMode = false; globalFileRecord = null;
                 selectedCell = null;
-                selectedCellKey = null;
                 updateSaveButtonState();
-                sheetTabs.style.display = 'none';
-                sheetTabs.innerHTML = '';
-                tableContent.style.display = 'none';
-                tableContent.innerHTML = '';
+                sheetTabs.style.display = 'none'; sheetTabs.innerHTML = '';
+                tableContent.style.display = 'none'; tableContent.innerHTML = '';
                 emptyState.style.display = 'flex';
                 statusBadge.textContent = 'Ready';
                 hideError();
                 fileInput.value = '';
-                navTop.disabled = true;
-                navBottom.disabled = true;
+                navTop.disabled = true; navBottom.disabled = true;
                 quickNav.classList.remove('visible');
                 colNavBar.classList.add('hidden');
                 globalBanner.style.display = 'none';
                 setLoading(false);
-                history = [];
-                historyIndex = -1;
+                history = []; historyIndex = -1;
                 updateHistoryButtons();
             }
 
@@ -2348,7 +2257,6 @@
                 hideError();
                 statusBadge.textContent = 'Reading…';
                 setLoading(true, 'Reading file…');
-
                 const reader = new FileReader();
                 reader.onload = (evt) => {
                     setLoading(true, 'Processing data & styles…');
@@ -2359,9 +2267,7 @@
                             resetUI();
                             showError('Error reading file: ' + err.message);
                             statusBadge.textContent = 'Error';
-                        } finally {
-                            setLoading(false);
-                        }
+                        } finally { setLoading(false); }
                     }, 30);
                 };
                 reader.onerror = (err) => {
@@ -2382,11 +2288,9 @@
             btnClearMarks.addEventListener('click', clearAllMarks);
 
             document.addEventListener('keydown', (e) => {
-                if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-                    e.preventDefault(); undo();
-                } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) {
-                    e.preventDefault(); redo();
-                } else if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
+                else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) { e.preventDefault(); redo(); }
+                else if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
                     e.preventDefault();
                     const info = getSelectedCellInfo();
                     if (info) {
@@ -2400,14 +2304,8 @@
                 }
             });
 
-            document.body.addEventListener('dragover', (e) => {
-                e.preventDefault(); e.stopPropagation();
-                fileLabel.style.background = '#2b8c4e';
-            });
-            document.body.addEventListener('dragleave', (e) => {
-                e.preventDefault(); e.stopPropagation();
-                fileLabel.style.background = '';
-            });
+            document.body.addEventListener('dragover', (e) => { e.preventDefault(); e.stopPropagation(); fileLabel.style.background = '#2b8c4e'; });
+            document.body.addEventListener('dragleave', (e) => { e.preventDefault(); e.stopPropagation(); fileLabel.style.background = ''; });
             document.body.addEventListener('drop', (e) => {
                 e.preventDefault(); e.stopPropagation();
                 fileLabel.style.background = '';
@@ -2415,10 +2313,7 @@
                 if (files.length > 0) {
                     const file = files[0];
                     const validExts = ['.xlsx', '.xls', '.xlsm', '.xlsb', '.csv'];
-                    if (!validExts.some(ext => file.name.toLowerCase().endsWith(ext))) {
-                        showError('Unsupported file type.');
-                        return;
-                    }
+                    if (!validExts.some(ext => file.name.toLowerCase().endsWith(ext))) { showError('Unsupported file type.'); return; }
                     const dt = new DataTransfer();
                     dt.items.add(file);
                     fileInput.files = dt.files;
