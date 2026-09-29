@@ -473,6 +473,8 @@
             width: 110px;
             min-width: 110px;
             max-width: 110px;
+            background-color: #ffffff;
+            color: #1e293b;
         }
 
         .excel-table th {
@@ -1227,14 +1229,11 @@
                         // --- FONT (color, family, size, bold, italic, underline) ---
                         if (cell.s && cell.s.font) {
                             const font = cell.s.font;
-                            // Font color (Excel stores as rgb)
                             if (font.color && font.color.rgb) {
                                 const fc = argbToRgb(font.color.rgb);
                                 if (fc) styleParts.push(`color:${fc}`);
                             }
-                            // Also check theme color fallback
                             if (font.color && font.color.theme !== undefined && !font.color.rgb) {
-                                // theme colors: 0=dk1, 1=lt1, 2=dk2, 3=lt2, 4=accent1...
                                 const themeMap = {0:'#000000',1:'#ffffff',2:'#1f497d',3:'#eeece1',4:'#4f81bd',5:'#c0504d',6:'#9bbb59',7:'#8064a2',8:'#4bacc6',9:'#f79646'};
                                 const tc = themeMap[font.color.theme];
                                 if (tc) styleParts.push(`color:${tc}`);
@@ -1243,7 +1242,6 @@
                             if (font.sz) styleParts.push(`font-size:${font.sz}pt`);
                             if (font.bold) styleParts.push('font-weight:700');
                             if (font.italic) styleParts.push('font-style:italic');
-                            // underline: true, 'single', 'double', etc.
                             if (font.underline === true || font.underline === 'single' || font.underline === 'double') {
                                 styleParts.push('text-decoration:underline');
                             }
@@ -1266,7 +1264,6 @@
                             const borderSide = (side, cssProp) => {
                                 if (!side) return;
                                 if (!side.style || side.style === 'none') return;
-                                // Map Excel border styles to CSS
                                 let cssStyle = 'solid';
                                 let cssWidth = '1px';
                                 switch (side.style) {
@@ -1426,7 +1423,7 @@
                 }
                 hasUnsavedChanges = Object.keys(editedCells).length > 0;
                 updateSaveButtonState();
-                persistSession();  // auto-save to localStorage after every edit
+                persistSession();
             }
 
             function applyEditHighlights(sheetName) {
@@ -1454,7 +1451,6 @@
             function persistSession() {
                 if (!workbook || !currentFileName) return;
                 try {
-                    // Convert current workbook (including any unsaved edits) to array buffer
                     const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
                     const bytes = new Uint8Array(wbout);
                     let binary = '';
@@ -1481,18 +1477,15 @@
                     const session = JSON.parse(saved);
                     if (!session.fileBase64 || !session.fileName) return false;
 
-                    // Decode base64 back to Uint8Array
                     const binary = atob(session.fileBase64);
                     const bytes = new Uint8Array(binary.length);
                     for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
 
-                    // Restore state
                     currentFileName = session.fileName;
                     editedCells = session.editedCells || {};
                     originalSheetData = session.originalSheetData || {};
                     hasUnsavedChanges = Object.keys(editedCells).length > 0;
 
-                    // Parse workbook
                     const wb = XLSX.read(bytes, {
                         type: 'array',
                         cellDates: false,
@@ -1504,7 +1497,6 @@
                     workbook = wb;
                     sheetNames = wb.SheetNames;
 
-                    // Rebuild style maps
                     styleMap = {};
                     mergedMap = {};
                     sheetNames.forEach(name => {
@@ -1516,7 +1508,6 @@
                         }
                     });
 
-                    // Reset UI
                     emptyState.style.display = 'none';
                     buildSheetTabs();
                     statusBadge.textContent = `Restored · ${session.fileName}`;
@@ -1798,7 +1789,7 @@
                     updateColNavUI();
                     updateQuickNav();
                     resetHistory();
-                    persistSession();  // save session after loading a new file
+                    persistSession();
                 } catch (err) {
                     console.error(err);
                     resetUI();
@@ -1854,7 +1845,6 @@
                     return;
                 }
 
-                // Collect all edits across all sheets
                 const payloads = [];
                 Object.keys(editedCells).forEach(sheetName => {
                     const edits = editedCells[sheetName];
@@ -1863,7 +1853,6 @@
                         const rowIdx = parseInt(rowStr, 10);
                         const colIdx = parseInt(colStr, 10);
                         const value = edits[key];
-                        // Get original for reference
                         const original = originalSheetData[sheetName]?.[rowIdx]?.[colIdx] ?? '';
                         payloads.push({
                             file_name: currentFileName,
@@ -1894,7 +1883,6 @@
 
                     if (error) throw error;
 
-                    // Also update local workbook after cloud save
                     Object.keys(editedCells).forEach(sheetName => {
                         const sheet = workbook.Sheets[sheetName];
                         if (!sheet) return;
