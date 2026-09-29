@@ -1187,7 +1187,7 @@
                 btnRevert.disabled = !hasEdits;
             }
 
-            // ============ STYLE EXTRACTION ============
+            // ============ STYLE EXTRACTION (enhanced: font colors, thick/thin borders) ============
             function extractStyles(sheet) {
                 const styles = {};
                 const merges = {};
@@ -1211,28 +1211,45 @@
                         if (!cell) continue;
                         const styleParts = [];
 
+                        // --- FILL (background color) ---
                         if (cell.s && cell.s.fill) {
-                            const fg = cell.s.fill.fgColor;
+                            const fill = cell.s.fill;
+                            const fg = fill.fgColor;
                             if (fg && fg.rgb) {
                                 const bg = argbToRgb(fg.rgb);
                                 if (bg) styleParts.push(`background-color:${bg}`);
-                            } else if (cell.s.fill.patternType === 'solid' && fg && fg.rgb) {
+                            } else if (fill.patternType === 'solid' && fg && fg.rgb) {
                                 const bg = argbToRgb(fg.rgb);
                                 if (bg) styleParts.push(`background-color:${bg}`);
                             }
                         }
+
+                        // --- FONT (color, family, size, bold, italic, underline) ---
                         if (cell.s && cell.s.font) {
                             const font = cell.s.font;
+                            // Font color (Excel stores as rgb)
                             if (font.color && font.color.rgb) {
                                 const fc = argbToRgb(font.color.rgb);
                                 if (fc) styleParts.push(`color:${fc}`);
+                            }
+                            // Also check theme color fallback
+                            if (font.color && font.color.theme !== undefined && !font.color.rgb) {
+                                // theme colors: 0=dk1, 1=lt1, 2=dk2, 3=lt2, 4=accent1...
+                                const themeMap = {0:'#000000',1:'#ffffff',2:'#1f497d',3:'#eeece1',4:'#4f81bd',5:'#c0504d',6:'#9bbb59',7:'#8064a2',8:'#4bacc6',9:'#f79646'};
+                                const tc = themeMap[font.color.theme];
+                                if (tc) styleParts.push(`color:${tc}`);
                             }
                             if (font.name) styleParts.push(`font-family:'${font.name}', 'Inter', sans-serif`);
                             if (font.sz) styleParts.push(`font-size:${font.sz}pt`);
                             if (font.bold) styleParts.push('font-weight:700');
                             if (font.italic) styleParts.push('font-style:italic');
-                            if (font.underline) styleParts.push('text-decoration:underline');
+                            // underline: true, 'single', 'double', etc.
+                            if (font.underline === true || font.underline === 'single' || font.underline === 'double') {
+                                styleParts.push('text-decoration:underline');
+                            }
                         }
+
+                        // --- ALIGNMENT ---
                         if (cell.s && cell.s.alignment) {
                             const align = cell.s.alignment;
                             if (align.horizontal) styleParts.push(`text-align:${align.horizontal}`);
@@ -1242,25 +1259,48 @@
                                 styleParts.push('word-break:break-word');
                             }
                         }
+
+                        // --- BORDERS (thick / thin / double / dashed / dotted / medium) ---
                         if (cell.s && cell.s.border) {
                             const b = cell.s.border;
-                            if (b.top && b.top.style && b.top.style !== 'none') {
-                                const col = b.top.color && b.top.color.rgb ? argbToRgb(b.top.color.rgb) : '#000';
-                                styleParts.push(`border-top:1px solid ${col}`);
-                            }
-                            if (b.bottom && b.bottom.style && b.bottom.style !== 'none') {
-                                const col = b.bottom.color && b.bottom.color.rgb ? argbToRgb(b.bottom.color.rgb) : '#000';
-                                styleParts.push(`border-bottom:1px solid ${col}`);
-                            }
-                            if (b.left && b.left.style && b.left.style !== 'none') {
-                                const col = b.left.color && b.left.color.rgb ? argbToRgb(b.left.color.rgb) : '#000';
-                                styleParts.push(`border-left:1px solid ${col}`);
-                            }
-                            if (b.right && b.right.style && b.right.style !== 'none') {
-                                const col = b.right.color && b.right.color.rgb ? argbToRgb(b.right.color.rgb) : '#000';
-                                styleParts.push(`border-right:1px solid ${col}`);
-                            }
+                            const borderSide = (side, cssProp) => {
+                                if (!side) return;
+                                if (!side.style || side.style === 'none') return;
+                                // Map Excel border styles to CSS
+                                let cssStyle = 'solid';
+                                let cssWidth = '1px';
+                                switch (side.style) {
+                                    case 'thin': cssWidth = '1px'; cssStyle = 'solid'; break;
+                                    case 'medium': cssWidth = '2px'; cssStyle = 'solid'; break;
+                                    case 'thick': cssWidth = '3px'; cssStyle = 'solid'; break;
+                                    case 'double': cssWidth = '3px'; cssStyle = 'double'; break;
+                                    case 'dashed': cssWidth = '1px'; cssStyle = 'dashed'; break;
+                                    case 'dotted': cssWidth = '1px'; cssStyle = 'dotted'; break;
+                                    case 'hair': cssWidth = '1px'; cssStyle = 'dotted'; break;
+                                    case 'mediumDashed': cssWidth = '2px'; cssStyle = 'dashed'; break;
+                                    case 'mediumDashDot': cssWidth = '2px'; cssStyle = 'dashed'; break;
+                                    case 'mediumDashDotDot': cssWidth = '2px'; cssStyle = 'dashed'; break;
+                                    case 'slantDashDot': cssWidth = '2px'; cssStyle = 'dashed'; break;
+                                    case 'dashDot': cssWidth = '1px'; cssStyle = 'dashed'; break;
+                                    case 'dashDotDot': cssWidth = '1px'; cssStyle = 'dashed'; break;
+                                    default: cssWidth = '1px'; cssStyle = 'solid';
+                                }
+                                let color = '#000000';
+                                if (side.color && side.color.rgb) {
+                                    const c = argbToRgb(side.color.rgb);
+                                    if (c) color = c;
+                                } else if (side.color && side.color.theme !== undefined) {
+                                    const themeMap = {0:'#000000',1:'#ffffff',2:'#1f497d',3:'#eeece1',4:'#4f81bd',5:'#c0504d',6:'#9bbb59',7:'#8064a2',8:'#4bacc6',9:'#f79646'};
+                                    color = themeMap[side.color.theme] || '#000000';
+                                }
+                                styleParts.push(`${cssProp}:${cssWidth} ${cssStyle} ${color}`);
+                            };
+                            borderSide(b.top, 'border-top');
+                            borderSide(b.bottom, 'border-bottom');
+                            borderSide(b.left, 'border-left');
+                            borderSide(b.right, 'border-right');
                         }
+
                         if (styleParts.length > 0) {
                             styles[`${R},${C}`] = styleParts.join(';');
                         }
