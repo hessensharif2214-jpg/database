@@ -274,6 +274,22 @@
             color: #94a3b8;
         }
 
+        .action-btn.nav {
+            background: #1e6f3f;
+            border-color: #1e6f3f;
+            color: white;
+        }
+
+        .action-btn.nav:active:not(:disabled) {
+            background: #185a32;
+        }
+
+        .action-btn.nav:disabled {
+            background: #cbd5e1;
+            border-color: #cbd5e1;
+            color: white;
+        }
+
         .action-btn.format-active {
             background: #1e6f3f;
             border-color: #1e6f3f;
@@ -1078,6 +1094,15 @@
                 Publish to All
             </button>
             <div class="action-divider"></div>
+            <button class="action-btn nav" id="btn-top" title="Go to top of sheet" disabled>
+                <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15" /></svg>
+                Top
+            </button>
+            <button class="action-btn nav" id="btn-bottom" title="Go to bottom of sheet" disabled>
+                <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" /></svg>
+                Bottom
+            </button>
+            <div class="action-divider"></div>
             <button class="action-btn warn" id="btn-clear-marks" title="Remove red edit markers" disabled>
                 <svg viewBox="0 0 24 24"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
                 Clear Marks
@@ -1195,6 +1220,8 @@
             const btnColor = document.getElementById('btn-color');
             const colorMenu = document.getElementById('color-menu');
             const colorSwatch = document.getElementById('color-swatch');
+            const btnTop = document.getElementById('btn-top');
+            const btnBottom = document.getElementById('btn-bottom');
             const toast = document.getElementById('toast');
             const navTop = document.getElementById('nav-top');
             const navBottom = document.getElementById('nav-bottom');
@@ -1222,10 +1249,10 @@
             let workbook = null;
             let currentSheetName = '';
             let sheetNames = [];
-            let originalSheetData = {};   // { sheet: [[originalValue, ...], ...] } — from the uploaded file
-            let editedCells = {};         // { sheet: { "r,c": newValue } } — red marker shown
-            let cellFormats = {};         // { sheet: { "r,c": { bold, color } } }
-            let clearedCells = {};        // { sheet: { "r,c": value } } — value kept, no red
+            let originalSheetData = {};
+            let editedCells = {};
+            let cellFormats = {};
+            let clearedCells = {};
             let hasUnsavedChanges = false;
             let currentFileName = '';
             let isGlobalMode = false;
@@ -1246,7 +1273,6 @@
             let mergedMap = {};
 
             let autoSaveTimer = null;
-            let isInternalRender = false;
 
             // ============ UTILS ============
             function showToast(message, type = '') {
@@ -1328,7 +1354,6 @@
                 historyIndex = history.length - 1;
                 updateHistoryButtons();
             }
-
             function applyHistorySnapshot(snapshot) {
                 editedCells = JSON.parse(JSON.stringify(snapshot.editedCells));
                 cellFormats = JSON.parse(JSON.stringify(snapshot.cellFormats || {}));
@@ -1338,29 +1363,18 @@
                 updateHistoryButtons();
                 if (currentSheetName) renderSheet(currentSheetName);
             }
-
             function undo() {
-                if (historyIndex > 0) {
-                    historyIndex--;
-                    applyHistorySnapshot(history[historyIndex]);
-                    showToast('Undo');
-                }
+                if (historyIndex > 0) { historyIndex--; applyHistorySnapshot(history[historyIndex]); showToast('Undo'); }
             }
             function redo() {
-                if (historyIndex < history.length - 1) {
-                    historyIndex++;
-                    applyHistorySnapshot(history[historyIndex]);
-                    showToast('Redo');
-                }
+                if (historyIndex < history.length - 1) { historyIndex++; applyHistorySnapshot(history[historyIndex]); showToast('Redo'); }
             }
             function updateHistoryButtons() {
                 btnUndo.disabled = historyIndex <= 0;
                 btnRedo.disabled = historyIndex >= history.length - 1;
             }
             function resetHistory() {
-                history = [];
-                historyIndex = -1;
-                pushHistory();
+                history = []; historyIndex = -1; pushHistory();
             }
 
             // ============ BUTTON STATE ============
@@ -1443,8 +1457,6 @@
                                     case 'double': cssWidth='3px'; cssStyle='double'; break;
                                     case 'dashed': cssWidth='1px'; cssStyle='dashed'; break;
                                     case 'dotted': cssWidth='1px'; cssStyle='dotted'; break;
-                                    case 'hair': cssWidth='1px'; cssStyle='dotted'; break;
-                                    case 'mediumDashed': cssWidth='2px'; cssStyle='dashed'; break;
                                     default: cssWidth='1px'; cssStyle='solid';
                                 }
                                 let color = '#000000';
@@ -1466,19 +1478,37 @@
                 return { styles, merges };
             }
 
-            // ============ QUICK NAV ============
+            // ============ QUICK NAV (floating buttons) ============
             function updateQuickNav() {
-                if (!workbook || !currentSheetName) { quickNav.classList.remove('visible'); return; }
+                if (!workbook || !currentSheetName) {
+                    quickNav.classList.remove('visible');
+                    btnTop.disabled = true;
+                    btnBottom.disabled = true;
+                    return;
+                }
                 quickNav.classList.add('visible');
                 const hasScroll = tableContainer.scrollHeight > tableContainer.clientHeight + 10;
-                if (!hasScroll) { navTop.disabled = true; navBottom.disabled = true; return; }
-                navTop.disabled = tableContainer.scrollTop <= 5;
-                navBottom.disabled = tableContainer.scrollTop + tableContainer.clientHeight >= tableContainer.scrollHeight - 5;
+                if (!hasScroll) {
+                    navTop.disabled = true;
+                    navBottom.disabled = true;
+                    btnTop.disabled = true;
+                    btnBottom.disabled = true;
+                    return;
+                }
+                const atTop = tableContainer.scrollTop <= 5;
+                const atBottom = tableContainer.scrollTop + tableContainer.clientHeight >= tableContainer.scrollHeight - 5;
+                navTop.disabled = atTop;
+                navBottom.disabled = atBottom;
+                btnTop.disabled = atTop;
+                btnBottom.disabled = atBottom;
             }
             tableContainer.addEventListener('scroll', updateQuickNav, { passive: true });
             window.addEventListener('resize', () => { updateQuickNav(); updateColNavUI(); });
             navTop.addEventListener('click', () => tableContainer.scrollTo({ top: 0, behavior: 'smooth' }));
             navBottom.addEventListener('click', () => tableContainer.scrollTo({ top: tableContainer.scrollHeight, behavior: 'smooth' }));
+            // Toolbar nav buttons
+            btnTop.addEventListener('click', () => tableContainer.scrollTo({ top: 0, behavior: 'smooth' }));
+            btnBottom.addEventListener('click', () => tableContainer.scrollTo({ top: tableContainer.scrollHeight, behavior: 'smooth' }));
 
             // ============ COLUMN NAV ============
             function updateColNavUI() {
@@ -1564,7 +1594,6 @@
                 updateSaveButtonState();
                 scheduleAutoSave();
             }
-
             function setCellFormat(sheetName, rowIndex, colIndex, patch) {
                 if (!cellFormats[sheetName]) cellFormats[sheetName] = {};
                 const key = `${rowIndex},${colIndex}`;
@@ -1581,7 +1610,6 @@
                 updateSaveButtonState();
                 scheduleAutoSave();
             }
-
             function clearAllMarks() {
                 if (Object.keys(editedCells).length === 0) return;
                 Object.keys(editedCells).forEach(sheetName => {
@@ -1598,7 +1626,6 @@
                 scheduleAutoSave();
                 showToast('Red markers cleared — values kept', 'success');
             }
-
             function applyEditHighlights(sheetName) {
                 const table = tableContent.querySelector('.excel-table');
                 if (!table) return;
@@ -1617,10 +1644,8 @@
                         if (td.dataset.fmtColor) { td.style.color = ''; delete td.dataset.fmtColor; }
                         if (td.dataset.fmtBold) { td.style.fontWeight = ''; delete td.dataset.fmtBold; }
                         if (td.dataset.fmtItalic) { td.style.fontStyle = ''; delete td.dataset.fmtItalic; }
-
                         if (edits[key] !== undefined) td.classList.add('edited');
                         else if (cleared[key] !== undefined) td.classList.add('cleared');
-
                         const fmt = formats[key];
                         if (fmt) {
                             if (fmt.bold) { td.style.fontWeight = '700'; td.dataset.fmtBold = '1'; }
@@ -1671,9 +1696,7 @@
                         timestamp: Date.now()
                     };
                     localStorage.setItem('hExcelSession', JSON.stringify(sessionData));
-                } catch (err) {
-                    console.warn('Auto-save failed:', err);
-                }
+                } catch (err) { console.warn('Auto-save failed:', err); }
             }
 
             // ============ LOCAL SESSION ============
@@ -1746,7 +1769,6 @@
                     return data || null;
                 } catch (err) { console.warn('Fetch global file error:', err); return null; }
             }
-
             async function loadGlobalFileIntoApp(record) {
                 if (!record || !record.file_data) return false;
                 try {
@@ -1764,8 +1786,6 @@
                     editedCells = {};
                     cellFormats = {};
                     clearedCells = {};
-
-                    // Restore all shared state from the cloud record
                     if (record.edits && typeof record.edits === 'object') {
                         if (record.edits.edited || record.edits.cleared || record.edits.formats) {
                             editedCells = record.edits.edited || {};
@@ -1775,9 +1795,7 @@
                             editedCells = record.edits;
                         }
                     }
-
                     hasUnsavedChanges = false;
-
                     styleMap = {}; mergedMap = {};
                     sheetNames.forEach(name => {
                         const sheet = wb.Sheets[name];
@@ -1787,7 +1805,6 @@
                             mergedMap[name] = merges;
                         }
                     });
-
                     emptyState.style.display = 'none';
                     buildSheetTabs();
                     statusBadge.textContent = `Global · ${sheetNames.length} sheet${sheetNames.length > 1 ? 's' : ''}`;
@@ -1798,25 +1815,17 @@
                     globalBanner.style.display = 'flex';
                     globalFileName.textContent = currentFileName;
                     cloudStatus.textContent = 'Global file loaded';
-
-                    // IMPORTANT: Re-render so red markers, bold text, and colors appear for everyone
                     if (currentSheetName) renderSheet(currentSheetName);
-
                     showToast('🌐 Loaded shared file, red edits & formats', 'cloud');
                     return true;
                 } catch (err) { console.error('Load global file error:', err); return false; }
             }
-
             async function publishToGlobal() {
                 if (!supabase) { showError('Supabase client not initialized.'); return; }
                 if (!workbook) { showError('No workbook loaded.'); return; }
-
                 setLoading(true, 'Publishing to all visitors…');
                 cloudStatus.textContent = 'Publishing…';
-
                 try {
-                    // Write the workbook WITH the current edits already applied, so any visitor
-                    // that loads this file gets the actual values from the start.
                     const wbForPublish = XLSX.read(XLSX.write(workbook, { bookType: 'xlsx', type: 'array' }), {
                         type: 'array', cellStyles: true, dense: true
                     });
@@ -1837,23 +1846,18 @@
                         if (sheet['!merges']) newSheet['!merges'] = sheet['!merges'];
                         wbForPublish.Sheets[sheetName] = newSheet;
                     });
-
                     const wbout = XLSX.write(wbForPublish, { bookType: 'xlsx', type: 'array' });
                     const base64 = arrayBufferToBase64(wbout);
-
-                    // Bundle the red-marked cells, cleared cells, and formats
                     const mergedEdits = {
                         edited: Object.assign({}, (globalFileRecord?.edits?.edited) || {}, editedCells),
                         cleared: Object.assign({}, (globalFileRecord?.edits?.cleared) || {}, clearedCells),
                         formats: Object.assign({}, (globalFileRecord?.edits?.formats) || {}, cellFormats)
                     };
-
                     const { error: delError } = await supabase
                         .from('shared_files')
                         .delete()
                         .neq('id', '00000000-0000-0000-0000-000000000000');
                     if (delError) throw delError;
-
                     const { data, error } = await supabase
                         .from('shared_files')
                         .insert({
@@ -1864,20 +1868,14 @@
                         })
                         .select()
                         .single();
-
                     if (error) throw error;
-
                     globalFileRecord = data;
                     isGlobalMode = true;
-
-                    // CRITICAL: Do NOT clear editedCells / cellFormats after publish.
-                    // Keeping them lets the publisher still see the red markers and formats.
                     hasUnsavedChanges = false;
                     updateSaveButtonState();
                     if (currentSheetName) renderSheet(currentSheetName);
                     resetHistory();
                     autoSaveNow();
-
                     globalBanner.style.display = 'flex';
                     globalFileName.textContent = currentFileName;
                     cloudStatus.textContent = 'Published globally';
@@ -1888,11 +1886,8 @@
                     cloudStatus.textContent = 'Publish failed';
                     showError('Publish failed: ' + (err.message || 'unknown error'));
                     showToast('🌐 Publish failed', 'error');
-                } finally {
-                    setLoading(false);
-                }
+                } finally { setLoading(false); }
             }
-
             async function tryAutoLoadGlobal() {
                 const record = await fetchGlobalFile();
                 if (record && record.file_data) {
@@ -1908,18 +1903,12 @@
                 if (!workbook || !currentSheetName) return;
                 renderSheet(currentSheetName);
             }
-
             function renderSheet(sheetName) {
                 const sheet = workbook.Sheets[sheetName];
                 if (!sheet) { showError('Sheet not found.'); return; }
-
                 let rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false });
                 if (!rows || rows.length === 0) rows = [['']];
-
-                if (!originalSheetData[sheetName]) {
-                    originalSheetData[sheetName] = rows.map(row => [...row]);
-                }
-
+                if (!originalSheetData[sheetName]) originalSheetData[sheetName] = rows.map(row => [...row]);
                 if (!styleMap[sheetName]) {
                     const { styles, merges } = extractStyles(sheet);
                     styleMap[sheetName] = styles;
@@ -1927,15 +1916,12 @@
                 }
                 const styles = styleMap[sheetName] || {};
                 const merges = mergedMap[sheetName] || {};
-
                 const maxCols = rows.reduce((max, row) => Math.max(max, row.length), 0);
                 totalColumns = maxCols;
-
                 const normalizedRows = rows.map(row => {
                     if (row.length < maxCols) return [...row, ...Array(maxCols - row.length).fill('')];
                     return row;
                 });
-
                 let startCol = 0;
                 let endCol = maxCols;
                 const showColumnNav = maxCols > 25;
@@ -1944,12 +1930,9 @@
                     endCol = Math.min(colWindowStart + colWindowSize, maxCols);
                 }
                 if (endCol - startCol <= 0) { startCol = 0; endCol = Math.min(DEFAULT_WINDOW, maxCols); }
-
-                // Apply per-cell edits & cleared values into the rendered values
                 const edits = editedCells[sheetName] || {};
                 const cleared = clearedCells[sheetName] || {};
                 const formats = cellFormats[sheetName] || {};
-
                 let html = '<table class="excel-table">';
                 html += '<thead><tr>';
                 html += '<th class="row-num">#</th>';
@@ -1961,25 +1944,20 @@
                     html += `<th style="${headerStyle}" title="${escapeHtml(colLabel)}">${escapeHtml(String(headerVal)) || colLabel}</th>`;
                 }
                 html += '</tr></thead><tbody>';
-
                 for (let r = 1; r < normalizedRows.length; r++) {
                     html += '<tr>';
                     html += `<td class="row-num">${r}</td>`;
                     for (let c = startCol; c < endCol; c++) {
                         const key = `${r},${c}`;
-                        // Value = edit if present, cleared if present, else original
                         let val = normalizedRows[r]?.[c] ?? '';
                         if (edits[key] !== undefined) val = edits[key];
                         else if (cleared[key] !== undefined) val = cleared[key];
-
                         const cellStyle = styles[key] || '';
-
                         let mergeAttr = '';
                         if (merges[key]) {
                             const m = merges[key];
                             mergeAttr = ` rowspan="${m.rowspan}" colspan="${m.colspan}"`;
                         }
-
                         let isMergedCover = false;
                         for (const mk in merges) {
                             const [mr, mc] = mk.split(',').map(Number);
@@ -1990,25 +1968,20 @@
                             }
                         }
                         if (isMergedCover) continue;
-
-                        // Apply format overrides directly in inline style so they show up immediately
                         const fmt = formats[key] || {};
                         let extraStyle = '';
                         if (fmt.bold) extraStyle += 'font-weight:700;';
                         if (fmt.italic) extraStyle += 'font-style:italic;';
                         if (fmt.color) extraStyle += `color:${fmt.color};`;
                         const mergedStyle = (cellStyle ? cellStyle + ';' : '') + extraStyle;
-
                         html += `<td contenteditable="true" data-row="${r}" data-col="${c}" style="${mergedStyle}"${mergeAttr}>${escapeHtml(String(val))}</td>`;
                     }
                     html += '</tr>';
                 }
                 html += '</tbody></table>';
-
                 tableContent.innerHTML = html;
                 tableContent.style.display = 'block';
                 emptyState.style.display = 'none';
-
                 const cells = tableContent.querySelectorAll('td[contenteditable="true"]');
                 cells.forEach(cell => {
                     cell.addEventListener('dragstart', (e) => e.preventDefault());
@@ -2021,8 +1994,6 @@
                         const rowIdx = parseInt(cell.dataset.row, 10);
                         const colIdx = parseInt(cell.dataset.col, 10);
                         if (!isNaN(rowIdx) && !isNaN(colIdx)) {
-                            const original = originalSheetData[sheetName]?.[rowIdx]?.[colIdx] ?? '';
-                            // Always record the edit so we know whether it differs from original
                             markEdited(sheetName, rowIdx, colIdx, newValue);
                             applyEditHighlights(sheetName);
                             pushHistory();
@@ -2048,10 +2019,7 @@
                         document.execCommand('insertText', false, text);
                     });
                 });
-
-                // Now apply the marker classes (edited/cleared) after DOM is built
                 applyEditHighlights(sheetName);
-
                 if (showColumnNav) {
                     colNavBar.classList.remove('hidden');
                     if (!isWindowed && colWindowSize >= maxCols && maxCols > DEFAULT_WINDOW * 2) {
@@ -2063,11 +2031,9 @@
                 } else {
                     colNavBar.classList.add('hidden');
                 }
-
                 quickNav.classList.add('visible');
                 setTimeout(updateQuickNav, 60);
             }
-
             function colLetter(n) {
                 let s = ''; n = n + 1;
                 while (n > 0) { const m = (n - 1) % 26; s = String.fromCharCode(65 + m) + s; n = Math.floor((n - 1) / 26); }
@@ -2176,7 +2142,6 @@
                     updateSaveButtonState();
                     colNavBar.classList.add('hidden');
                     currentFileName = fileName || 'untitled';
-
                     const wb = XLSX.read(data, {
                         type: 'array', cellDates: false, raw: false,
                         cellStyles: true, dense: true, sheetStubs: true
@@ -2184,7 +2149,6 @@
                     workbook = wb;
                     sheetNames = wb.SheetNames;
                     if (!sheetNames || sheetNames.length === 0) throw new Error('No sheets found.');
-
                     sheetNames.forEach(name => {
                         const sheet = wb.Sheets[name];
                         if (sheet) {
@@ -2193,7 +2157,6 @@
                             mergedMap[name] = merges;
                         }
                     });
-
                     hideError();
                     emptyState.style.display = 'none';
                     buildSheetTabs();
@@ -2202,7 +2165,6 @@
                     updateQuickNav();
                     resetHistory();
                     autoSaveNow();
-                    // Auto-publish so all visitors see the file + red marks
                     publishToGlobal();
                 } catch (err) {
                     console.error(err);
@@ -2242,6 +2204,7 @@
                 hideError();
                 fileInput.value = '';
                 navTop.disabled = true; navBottom.disabled = true;
+                btnTop.disabled = true; btnBottom.disabled = true;
                 quickNav.classList.remove('visible');
                 colNavBar.classList.add('hidden');
                 globalBanner.style.display = 'none';
