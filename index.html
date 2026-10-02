@@ -182,12 +182,14 @@
             flex-shrink: 0;
             position: relative;
             z-index: 25;
+            flex-wrap: wrap;
         }
 
         .search-input-wrap {
             display: flex;
             align-items: center;
             flex: 1;
+            min-width: 180px;
             background: #f8fafc;
             border: 1.5px solid #e2e8f0;
             border-radius: 10px;
@@ -306,6 +308,12 @@
             background-color: #fde047 !important;
             box-shadow: inset 0 0 0 3px #ca8a04 !important;
             z-index: 21;
+            animation: searchPulse 1.2s ease-in-out infinite;
+        }
+
+        @keyframes searchPulse {
+            0%, 100% { box-shadow: inset 0 0 0 3px #ca8a04 !important; }
+            50% { box-shadow: inset 0 0 0 3px #ca8a04, 0 0 0 3px rgba(234, 179, 8, 0.4) !important; }
         }
 
         .action-toolbar {
@@ -1324,7 +1332,7 @@
                         <polyline points="10 9 9 9 8 9" />
                     </svg>
                     <h3>No spreadsheet loaded</h3>
-                    <p>Open an <strong>.xlsx, .xls, .csv</strong> file. Type in the search bar — even partial names in <strong>any language</strong> (Arabic, English, mixed) — to jump straight to the matching cell.</p>
+                    <p>Open an <strong>.xlsx, .xls, .csv</strong> file. Type in the search bar — even partial names in <strong>any language</strong> — to jump straight to the matching cell.</p>
                 </div>
                 <div id="table-content" style="display: none;"></div>
             </div>
@@ -1445,36 +1453,24 @@
             let searchQuery = '';
 
             // ============ ARABIC / MULTILINGUAL NORMALIZATION ============
-            /**
-             * Normalize text for search matching across languages:
-             * - Lowercase (Latin)
-             * - Remove Arabic diacritics (tashkeel) and tatweel
-             * - Normalize Alef variants (أ إ آ ا) → ا
-             * - Normalize Yaa variants (ى ي) → ي
-             * - Normalize Taa Marbuta (ة) → ه  (so "فاطمة" matches "فاطمه")
-             * - Normalize Hamza forms (ؤ ئ) → و / ي
-             * - Remove zero-width characters
-             * - Collapse whitespace
-             */
             function normalizeText(str) {
                 if (str === null || str === undefined) return '';
                 let s = String(str);
-                // Lowercase
                 s = s.toLowerCase();
-                // Remove Arabic diacritics (tashkeel): fatha, damma, kasra, sukoon, shadda, tanween, etc.
+                // Remove Arabic diacritics
                 s = s.replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, '');
-                // Remove tatweel (kashida)
+                // Remove tatweel
                 s = s.replace(/\u0640/g, '');
-                // Normalize Alef variants → ا
+                // Normalize Alef variants
                 s = s.replace(/[\u0622\u0623\u0625\u0671]/g, '\u0627');
-                // Normalize Yaa variants → ي
+                // Normalize Yaa variants
                 s = s.replace(/\u0649/g, '\u064A');
-                // Normalize Taa Marbuta → ه
+                // Normalize Taa Marbuta
                 s = s.replace(/\u0629/g, '\u0647');
-                // Normalize Hamza on Waw → و , Hamza on Yaa → ي
+                // Normalize Hamza on Waw / Yaa
                 s = s.replace(/\u0624/g, '\u0648');
                 s = s.replace(/\u0626/g, '\u064A');
-                // Remove zero-width joiners / non-joiners / BOM
+                // Remove zero-width chars
                 s = s.replace(/[\u200B-\u200F\u202A-\u202E\u2060\uFEFF]/g, '');
                 // Collapse whitespace
                 s = s.replace(/\s+/g, ' ').trim();
@@ -1716,10 +1712,9 @@
             btnTop.addEventListener('click', () => tableContainer.scrollTo({ top: 0, behavior: 'smooth' }));
             btnBottom.addEventListener('click', () => tableContainer.scrollTo({ top: tableContainer.scrollHeight, behavior: 'smooth' }));
 
-            // ============ ADVANCED MULTILINGUAL SEARCH ============
+            // ============ SEARCH - FIXED to reliably navigate ============
             function performSearch(query) {
                 searchQuery = (query || '').trim();
-                // Clear previous highlights
                 tableContent.querySelectorAll('td.search-hit, td.search-current').forEach(td => {
                     td.classList.remove('search-hit', 'search-current');
                 });
@@ -1745,7 +1740,6 @@
 
                 const matches = [];
 
-                // Search across all sheets in the workbook
                 sheetNames.forEach(sName => {
                     const sheet = workbook.Sheets[sName];
                     if (!sheet) return;
@@ -1763,18 +1757,15 @@
                             if (val === null || val === undefined) continue;
                             const valStr = String(val);
                             if (!valStr) continue;
-                            // Normalize both sides for cross-language, diacritic-insensitive matching
+
                             const normalizedVal = normalizeText(valStr);
                             if (!normalizedVal) continue;
-                            // Also match raw lowercase (for exact latin typing before normalization kicks in)
                             const rawLower = valStr.toLowerCase();
 
-                            // 1. Substring match on normalized text
                             if (normalizedVal.includes(normalizedQuery)) {
                                 matches.push({ sheet: sName, row: r, col: c, value: valStr, priority: 1 });
                                 continue;
                             }
-                            // 2. Word-prefix match (each word of the query matches a word prefix in the value)
                             const queryWords = normalizedQuery.split(/\s+/).filter(Boolean);
                             if (queryWords.length > 1) {
                                 const valWords = normalizedVal.split(/\s+/).filter(Boolean);
@@ -1786,7 +1777,6 @@
                                     continue;
                                 }
                             }
-                            // 3. Fallback: substring on raw lowercase (catches numbers, latin)
                             if (rawLower.includes(searchQuery.toLowerCase())) {
                                 matches.push({ sheet: sName, row: r, col: c, value: valStr, priority: 3 });
                             }
@@ -1794,7 +1784,6 @@
                     }
                 });
 
-                // Sort by priority (best matches first), then by row/col for stability
                 matches.sort((a, b) => {
                     if (a.priority !== b.priority) return a.priority - b.priority;
                     if (a.sheet !== b.sheet) return a.sheet.localeCompare(b.sheet);
@@ -1810,7 +1799,6 @@
                     searchCount.textContent = '0';
                     searchPrev.disabled = true;
                     searchNext.disabled = true;
-                    // Don't spam a toast while typing
                     return;
                 }
 
@@ -1819,21 +1807,25 @@
                 searchPrev.disabled = false;
                 searchNext.disabled = false;
 
-                // Auto-jump to first match
                 jumpToMatch(searchIndex);
             }
 
+            /**
+             * FIXED: Reliable jump to the matching cell.
+             * 1. If match is on another sheet, switch sheets first.
+             * 2. If the target column is outside the current window, expand the window
+             *    so the column is visible.
+             * 3. Then scroll the cell into view (centered) and focus it.
+             */
             function jumpToMatch(index) {
                 if (index < 0 || index >= searchMatches.length) return;
                 const match = searchMatches[index];
                 searchIndex = index;
 
-                // Update counter
                 searchCount.textContent = `${index + 1}/${searchMatches.length}`;
 
-                // Switch to the sheet containing the match
+                // --- Step 1: Switch to the sheet containing the match (if different) ---
                 if (match.sheet !== currentSheetName) {
-                    // Silent set (don't re-trigger search highlight cycle)
                     currentSheetName = match.sheet;
                     colWindowStart = 0; colWindowSize = DEFAULT_WINDOW; isWindowed = false;
                     sheetTabs.querySelectorAll('.sheet-tab').forEach(tab => {
@@ -1845,10 +1837,33 @@
                     updateQuickNav();
                 }
 
+                // --- Step 2: If the match column is outside the visible column window, expand it ---
+                const maxCols = (workbook.Sheets[match.sheet] && workbook.Sheets[match.sheet]['!ref'])
+                    ? XLSX.utils.decode_range(workbook.Sheets[match.sheet]['!ref']).e.c + 1
+                    : 0;
+
+                if (totalColumns > 25) {
+                    const visibleStart = colWindowStart;
+                    const visibleEnd = colWindowStart + colWindowSize - 1;
+                    if (match.col < visibleStart || match.col > visibleEnd) {
+                        // Re-center the window on the matching column, keeping the same size
+                        let newStart = match.col - Math.floor(colWindowSize / 2);
+                        if (newStart < 0) newStart = 0;
+                        if (newStart + colWindowSize > totalColumns) {
+                            newStart = Math.max(0, totalColumns - colWindowSize);
+                        }
+                        colWindowStart = newStart;
+                        isWindowed = !(colWindowStart === 0 && colWindowSize >= totalColumns);
+                        renderSheet(match.sheet);
+                        updateColNavUI();
+                    }
+                }
+
+                // --- Step 3: Apply highlights + scroll into view + focus ---
                 // Remove old current highlight
                 tableContent.querySelectorAll('td.search-current').forEach(td => td.classList.remove('search-current'));
 
-                // Apply highlights for all matches in the current sheet
+                // Mark all matches on the current sheet
                 searchMatches.forEach((m, i) => {
                     if (m.sheet !== currentSheetName) return;
                     const cell = tableContent.querySelector(`td[data-row="${m.row}"][data-col="${m.col}"]`);
@@ -1858,22 +1873,40 @@
                     }
                 });
 
-                // Find current cell and scroll into view
-                setTimeout(() => {
+                // Scroll and focus the current cell (retry a couple of times in case render is async)
+                let attempts = 0;
+                const tryFocus = () => {
+                    attempts++;
                     const cell = tableContent.querySelector(`td[data-row="${match.row}"][data-col="${match.col}"]`);
                     if (cell) {
                         cell.classList.add('search-current');
-                        cell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+                        // Robust manual scroll within the container (works even when cell is off-screen)
+                        try {
+                            const containerRect = tableContainer.getBoundingClientRect();
+                            const cellRect = cell.getBoundingClientRect();
+                            const targetScrollTop = tableContainer.scrollTop + (cellRect.top - containerRect.top) - (tableContainer.clientHeight / 2) + (cellRect.height / 2);
+                            const targetScrollLeft = tableContainer.scrollLeft + (cellRect.left - containerRect.left) - (tableContainer.clientWidth / 2) + (cellRect.width / 2);
+                            tableContainer.scrollTo({
+                                top: Math.max(0, targetScrollTop),
+                                left: Math.max(0, targetScrollLeft),
+                                behavior: 'smooth'
+                            });
+                        } catch (e) {
+                            cell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+                        }
                         try {
                             cell.focus({ preventScroll: true });
                             selectedCell = cell;
                             syncFormatButtons(match.sheet);
                         } catch (e) {}
+                    } else if (attempts < 4) {
+                        setTimeout(tryFocus, 80);
                     }
-                }, 60);
+                };
+                setTimeout(tryFocus, 60);
             }
 
-            // Debounced live search as you type
+            // Live search as you type — debounced for performance
             let searchDebounce = null;
             searchInput.addEventListener('input', () => {
                 const q = searchInput.value;
@@ -1881,7 +1914,6 @@
                 else searchClear.classList.remove('visible');
 
                 clearTimeout(searchDebounce);
-                // Fast debounce for immediate "jump as you type" feel
                 searchDebounce = setTimeout(() => performSearch(q), 150);
             });
 
@@ -1930,7 +1962,7 @@
             searchNext.addEventListener('click', nextMatch);
             searchPrev.addEventListener('click', prevMatch);
 
-            // Re-apply search highlights after render (since render wipes the DOM)
+            // Re-apply search highlights after render
             function reapplySearchHighlights() {
                 if (searchMatches.length === 0) return;
                 tableContent.querySelectorAll('td.search-hit, td.search-current').forEach(td => {
@@ -2092,7 +2124,7 @@
                 });
             }
 
-            // ============ AUTO-SAVE (local) ============
+            // ============ AUTO-SAVE ============
             function scheduleAutoSave() {
                 if (autoSaveTimer) clearTimeout(autoSaveTimer);
                 autoSaveTimer = setTimeout(autoSaveNow, 1000);
@@ -2191,7 +2223,7 @@
                 showToast('Session dismissed');
             });
 
-            // ============ GLOBAL SHARED FILE (Supabase) ============
+            // ============ GLOBAL SHARED FILE ============
             async function fetchGlobalFile() {
                 if (!supabase) return null;
                 try {
