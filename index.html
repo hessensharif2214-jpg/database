@@ -27,7 +27,7 @@
         }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Naskh Arabic', 'Noto Sans Arabic', Tahoma, sans-serif;
             background: #f8f9fc;
             color: #1e293b;
             padding: 0.5rem;
@@ -223,6 +223,7 @@
             color: #1e293b;
             padding: 0.4rem 0;
             min-width: 0;
+            unicode-bidi: plaintext;
         }
 
         .search-input::placeholder {
@@ -716,6 +717,7 @@
             max-width: 100px;
             background-color: #ffffff;
             color: #1e293b;
+            unicode-bidi: plaintext;
         }
 
         .excel-table th {
@@ -1198,7 +1200,7 @@
         <div class="search-bar">
             <div class="search-input-wrap">
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input type="search" class="search-input" id="search-input" placeholder="Search names, numbers, anything…" autocomplete="off" spellcheck="false">
+                <input type="search" class="search-input" id="search-input" placeholder="ابحث عن أي اسم أو رقم… Search any name or number…" autocomplete="off" spellcheck="false" dir="auto">
                 <button class="search-clear" id="search-clear" title="Clear">×</button>
             </div>
             <span class="search-count" id="search-count" style="display: none;">0</span>
@@ -1322,7 +1324,7 @@
                         <polyline points="10 9 9 9 8 9" />
                     </svg>
                     <h3>No spreadsheet loaded</h3>
-                    <p>Open an <strong>.xlsx, .xls, .csv</strong> file. Use the search bar to find names or numbers and jump straight to that column. Edit cells, make text <strong>bold</strong>, change <strong>colors</strong>.</p>
+                    <p>Open an <strong>.xlsx, .xls, .csv</strong> file. Type in the search bar — even partial names in <strong>any language</strong> (Arabic, English, mixed) — to jump straight to the matching cell.</p>
                 </div>
                 <div id="table-content" style="display: none;"></div>
             </div>
@@ -1330,7 +1332,7 @@
 
         <div class="footer-note">
             <span class="autosave-dot"></span>
-            <strong>H Excel</strong> · auto-save on · <span class="red-note">✎ red = new edit</span> · <span class="cloud-note">☁ publish to all</span> · <span style="color:#eab308;">🔍 search jumps to column</span>
+            <strong>H Excel</strong> · auto-save on · <span class="red-note">✎ red = new edit</span> · <span class="cloud-note">☁ publish to all</span> · <span style="color:#eab308;">🔍 multilingual search</span>
         </div>
     </div>
 
@@ -1438,9 +1440,46 @@
             let autoSaveTimer = null;
 
             // Search state
-            let searchMatches = [];      // [{ row, col, sheet }]
-            let searchIndex = -1;        // current match index
+            let searchMatches = [];
+            let searchIndex = -1;
             let searchQuery = '';
+
+            // ============ ARABIC / MULTILINGUAL NORMALIZATION ============
+            /**
+             * Normalize text for search matching across languages:
+             * - Lowercase (Latin)
+             * - Remove Arabic diacritics (tashkeel) and tatweel
+             * - Normalize Alef variants (أ إ آ ا) → ا
+             * - Normalize Yaa variants (ى ي) → ي
+             * - Normalize Taa Marbuta (ة) → ه  (so "فاطمة" matches "فاطمه")
+             * - Normalize Hamza forms (ؤ ئ) → و / ي
+             * - Remove zero-width characters
+             * - Collapse whitespace
+             */
+            function normalizeText(str) {
+                if (str === null || str === undefined) return '';
+                let s = String(str);
+                // Lowercase
+                s = s.toLowerCase();
+                // Remove Arabic diacritics (tashkeel): fatha, damma, kasra, sukoon, shadda, tanween, etc.
+                s = s.replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, '');
+                // Remove tatweel (kashida)
+                s = s.replace(/\u0640/g, '');
+                // Normalize Alef variants → ا
+                s = s.replace(/[\u0622\u0623\u0625\u0671]/g, '\u0627');
+                // Normalize Yaa variants → ي
+                s = s.replace(/\u0649/g, '\u064A');
+                // Normalize Taa Marbuta → ه
+                s = s.replace(/\u0629/g, '\u0647');
+                // Normalize Hamza on Waw → و , Hamza on Yaa → ي
+                s = s.replace(/\u0624/g, '\u0648');
+                s = s.replace(/\u0626/g, '\u064A');
+                // Remove zero-width joiners / non-joiners / BOM
+                s = s.replace(/[\u200B-\u200F\u202A-\u202E\u2060\uFEFF]/g, '');
+                // Collapse whitespace
+                s = s.replace(/\s+/g, ' ').trim();
+                return s;
+            }
 
             // ============ UTILS ============
             function showToast(message, type = '') {
@@ -1677,7 +1716,7 @@
             btnTop.addEventListener('click', () => tableContainer.scrollTo({ top: 0, behavior: 'smooth' }));
             btnBottom.addEventListener('click', () => tableContainer.scrollTo({ top: tableContainer.scrollHeight, behavior: 'smooth' }));
 
-            // ============ SEARCH ============
+            // ============ ADVANCED MULTILINGUAL SEARCH ============
             function performSearch(query) {
                 searchQuery = (query || '').trim();
                 // Clear previous highlights
@@ -1694,7 +1733,16 @@
                     return;
                 }
 
-                const lowerQuery = searchQuery.toLowerCase();
+                const normalizedQuery = normalizeText(searchQuery);
+                if (!normalizedQuery) {
+                    searchMatches = [];
+                    searchIndex = -1;
+                    searchCount.style.display = 'none';
+                    searchPrev.disabled = true;
+                    searchNext.disabled = true;
+                    return;
+                }
+
                 const matches = [];
 
                 // Search across all sheets in the workbook
@@ -1710,16 +1758,48 @@
                         for (let c = 0; c < row.length; c++) {
                             let val = row[c];
                             const key = `${r},${c}`;
-                            // Use the current value (edited or cleared) for matching
                             if (edits[key] !== undefined) val = edits[key];
                             else if (cleared[key] !== undefined) val = cleared[key];
                             if (val === null || val === undefined) continue;
                             const valStr = String(val);
-                            if (valStr.toLowerCase().includes(lowerQuery)) {
-                                matches.push({ sheet: sName, row: r, col: c, value: valStr });
+                            if (!valStr) continue;
+                            // Normalize both sides for cross-language, diacritic-insensitive matching
+                            const normalizedVal = normalizeText(valStr);
+                            if (!normalizedVal) continue;
+                            // Also match raw lowercase (for exact latin typing before normalization kicks in)
+                            const rawLower = valStr.toLowerCase();
+
+                            // 1. Substring match on normalized text
+                            if (normalizedVal.includes(normalizedQuery)) {
+                                matches.push({ sheet: sName, row: r, col: c, value: valStr, priority: 1 });
+                                continue;
+                            }
+                            // 2. Word-prefix match (each word of the query matches a word prefix in the value)
+                            const queryWords = normalizedQuery.split(/\s+/).filter(Boolean);
+                            if (queryWords.length > 1) {
+                                const valWords = normalizedVal.split(/\s+/).filter(Boolean);
+                                const allWordsMatch = queryWords.every(qw =>
+                                    valWords.some(vw => vw.startsWith(qw) || vw.includes(qw))
+                                );
+                                if (allWordsMatch) {
+                                    matches.push({ sheet: sName, row: r, col: c, value: valStr, priority: 2 });
+                                    continue;
+                                }
+                            }
+                            // 3. Fallback: substring on raw lowercase (catches numbers, latin)
+                            if (rawLower.includes(searchQuery.toLowerCase())) {
+                                matches.push({ sheet: sName, row: r, col: c, value: valStr, priority: 3 });
                             }
                         }
                     }
+                });
+
+                // Sort by priority (best matches first), then by row/col for stability
+                matches.sort((a, b) => {
+                    if (a.priority !== b.priority) return a.priority - b.priority;
+                    if (a.sheet !== b.sheet) return a.sheet.localeCompare(b.sheet);
+                    if (a.row !== b.row) return a.row - b.row;
+                    return a.col - b.col;
                 });
 
                 searchMatches = matches;
@@ -1730,7 +1810,7 @@
                     searchCount.textContent = '0';
                     searchPrev.disabled = true;
                     searchNext.disabled = true;
-                    showToast('No matches found', 'error');
+                    // Don't spam a toast while typing
                     return;
                 }
 
@@ -1739,7 +1819,7 @@
                 searchPrev.disabled = false;
                 searchNext.disabled = false;
 
-                // Jump to first match
+                // Auto-jump to first match
                 jumpToMatch(searchIndex);
             }
 
@@ -1753,37 +1833,56 @@
 
                 // Switch to the sheet containing the match
                 if (match.sheet !== currentSheetName) {
-                    setActiveSheet(match.sheet);
+                    // Silent set (don't re-trigger search highlight cycle)
+                    currentSheetName = match.sheet;
+                    colWindowStart = 0; colWindowSize = DEFAULT_WINDOW; isWindowed = false;
+                    sheetTabs.querySelectorAll('.sheet-tab').forEach(tab => {
+                        tab.classList.toggle('active', tab.dataset.sheet === match.sheet);
+                    });
+                    renderSheet(match.sheet);
+                    statusBadge.textContent = `Sheet: ${match.sheet}`;
+                    updateColNavUI();
+                    updateQuickNav();
                 }
 
                 // Remove old current highlight
                 tableContent.querySelectorAll('td.search-current').forEach(td => td.classList.remove('search-current'));
 
-                // Wait for render then find and highlight the cell
+                // Apply highlights for all matches in the current sheet
+                searchMatches.forEach((m, i) => {
+                    if (m.sheet !== currentSheetName) return;
+                    const cell = tableContent.querySelector(`td[data-row="${m.row}"][data-col="${m.col}"]`);
+                    if (cell) {
+                        cell.classList.add('search-hit');
+                        if (i === index) cell.classList.add('search-current');
+                    }
+                });
+
+                // Find current cell and scroll into view
                 setTimeout(() => {
-                    // Find matching cell in DOM
                     const cell = tableContent.querySelector(`td[data-row="${match.row}"][data-col="${match.col}"]`);
                     if (cell) {
                         cell.classList.add('search-current');
-                        // Scroll into view (centered)
                         cell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
-                        // Auto-select for editing
                         try {
                             cell.focus({ preventScroll: true });
                             selectedCell = cell;
                             syncFormatButtons(match.sheet);
                         } catch (e) {}
                     }
-                }, 80);
+                }, 60);
             }
 
+            // Debounced live search as you type
+            let searchDebounce = null;
             searchInput.addEventListener('input', () => {
                 const q = searchInput.value;
                 if (q.trim().length > 0) searchClear.classList.add('visible');
                 else searchClear.classList.remove('visible');
-                // Debounce search slightly
-                clearTimeout(searchInput._debounce);
-                searchInput._debounce = setTimeout(() => performSearch(q), 200);
+
+                clearTimeout(searchDebounce);
+                // Fast debounce for immediate "jump as you type" feel
+                searchDebounce = setTimeout(() => performSearch(q), 150);
             });
 
             searchInput.addEventListener('keydown', (e) => {
@@ -1793,6 +1892,10 @@
                     else nextMatch();
                 } else if (e.key === 'Escape') {
                     clearSearch();
+                } else if (e.key === 'ArrowDown') {
+                    if (searchMatches.length > 0) { e.preventDefault(); nextMatch(); }
+                } else if (e.key === 'ArrowUp') {
+                    if (searchMatches.length > 0) { e.preventDefault(); prevMatch(); }
                 }
             });
 
@@ -1833,7 +1936,6 @@
                 tableContent.querySelectorAll('td.search-hit, td.search-current').forEach(td => {
                     td.classList.remove('search-hit', 'search-current');
                 });
-                // Only highlight matches in the current sheet
                 searchMatches.forEach((m, i) => {
                     if (m.sheet !== currentSheetName) return;
                     const cell = tableContent.querySelector(`td[data-row="${m.row}"][data-col="${m.col}"]`);
@@ -2354,7 +2456,6 @@
                     });
                 });
                 applyEditHighlights(sheetName);
-                // Restore search highlights after re-render
                 reapplySearchHighlights();
                 if (showColumnNav) {
                     colNavBar.classList.remove('hidden');
@@ -2548,7 +2649,6 @@
                 setLoading(false);
                 history = []; historyIndex = -1;
                 updateHistoryButtons();
-                // Clear search
                 searchInput.value = '';
                 searchClear.classList.remove('visible');
                 searchCount.style.display = 'none';
@@ -2594,7 +2694,6 @@
             btnClearMarks.addEventListener('click', clearAllMarks);
 
             document.addEventListener('keydown', (e) => {
-                // Don't trigger shortcuts while typing in search
                 if (e.target === searchInput) return;
                 if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
                 else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) { e.preventDefault(); redo(); }
