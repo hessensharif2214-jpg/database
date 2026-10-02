@@ -171,6 +171,142 @@
             text-overflow: ellipsis;
         }
 
+        /* ============ SEARCH BAR ============ */
+        .search-bar {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 0.5rem 0.75rem;
+            background: #ffffff;
+            border-bottom: 1px solid #e9edf4;
+            flex-shrink: 0;
+            position: relative;
+            z-index: 25;
+        }
+
+        .search-input-wrap {
+            display: flex;
+            align-items: center;
+            flex: 1;
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 0 0.5rem;
+            gap: 6px;
+            transition: all 0.15s;
+            min-height: 38px;
+        }
+
+        .search-input-wrap:focus-within {
+            border-color: #1e6f3f;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(30, 111, 63, 0.1);
+        }
+
+        .search-input-wrap svg {
+            width: 16px;
+            height: 16px;
+            stroke: #94a3b8;
+            fill: none;
+            stroke-width: 2.4;
+            flex-shrink: 0;
+        }
+
+        .search-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            background: transparent;
+            font-family: inherit;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #1e293b;
+            padding: 0.4rem 0;
+            min-width: 0;
+        }
+
+        .search-input::placeholder {
+            color: #94a3b8;
+            font-weight: 400;
+        }
+
+        .search-clear {
+            background: transparent;
+            border: none;
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #64748b;
+            font-size: 1rem;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+        .search-clear.visible { display: flex; }
+        .search-clear:active { background: #e2e8f0; }
+
+        .search-count {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #1e6f3f;
+            background: #eef9f0;
+            padding: 0.3rem 0.6rem;
+            border-radius: 40px;
+            border: 1px solid #c6e9cf;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .search-nav-btn {
+            background: #1e6f3f;
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s;
+            flex-shrink: 0;
+            padding: 0;
+        }
+        .search-nav-btn:active:not(:disabled) {
+            background: #185a32;
+            transform: scale(0.94);
+        }
+        .search-nav-btn:disabled {
+            background: #cbd5e1;
+            cursor: not-allowed;
+        }
+        .search-nav-btn svg {
+            width: 14px;
+            height: 14px;
+            stroke: white;
+            stroke-width: 2.6;
+            fill: none;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        /* Highlight for search matches */
+        .excel-table td.search-hit {
+            background-color: #fef9c3 !important;
+            box-shadow: inset 0 0 0 2px #eab308 !important;
+        }
+        .excel-table td.search-hit.edited {
+            background-color: #fde68a !important;
+        }
+        .excel-table td.search-current {
+            background-color: #fde047 !important;
+            box-shadow: inset 0 0 0 3px #ca8a04 !important;
+            z-index: 21;
+        }
+
         .action-toolbar {
             display: flex;
             align-items: center;
@@ -955,6 +1091,7 @@
             .logo-icon { width: 44px; height: 44px; font-size: 1.5rem; border-radius: 14px; }
             .logo-text { font-size: 1.65rem; }
             .tagline { display: inline; }
+            .search-bar { padding: 0.7rem 1.5rem; gap: 10px; }
             .action-toolbar { padding: 0.7rem 1.5rem; gap: 8px; }
             .action-btn { padding: 0.55rem 1.1rem; font-size: 0.85rem; min-height: 40px; }
             .spreadsheet-wrapper { padding: 0 1.5rem 1.5rem 1.5rem; }
@@ -975,6 +1112,7 @@
             .app-header { padding: 1.15rem 2rem; }
             .logo-icon { width: 48px; height: 48px; font-size: 1.7rem; }
             .logo-text { font-size: 1.85rem; }
+            .search-bar { padding: 0.75rem 2rem; }
             .spreadsheet-wrapper { padding: 0 2rem 1.75rem 2rem; }
             .action-toolbar { padding: 0.75rem 2rem; }
             .quick-nav { right: 2rem; bottom: 2rem; gap: 10px; }
@@ -991,6 +1129,7 @@
             .logo-icon { width: 30px; height: 30px; font-size: 1rem; border-radius: 8px; }
             .logo-text { font-size: 1.05rem; }
             .tagline { display: none; }
+            .search-bar { padding: 0.35rem 0.75rem; }
             .action-toolbar { padding: 0.35rem 0.75rem; }
             .action-btn { padding: 0.35rem 0.6rem; font-size: 0.68rem; min-height: 32px; }
             .status-badge { display: none; }
@@ -1005,6 +1144,7 @@
             .col-nav-btn { min-width: 34px; min-height: 34px; }
             .file-label { min-height: 38px; }
             .nav-btn { min-width: 46px; min-height: 46px; }
+            .search-nav-btn { min-width: 36px; min-height: 36px; }
         }
 
         .table-container, .sheet-tabs, .action-toolbar, .col-nav-bar {
@@ -1052,6 +1192,22 @@
                 <input type="file" id="file-input" accept=".xlsx, .xls, .xlsm, .xlsb, .csv">
                 <span class="status-badge" id="status-badge">Ready</span>
             </div>
+        </div>
+
+        <!-- ============ SEARCH BAR ============ -->
+        <div class="search-bar">
+            <div class="search-input-wrap">
+                <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="search" class="search-input" id="search-input" placeholder="Search names, numbers, anything…" autocomplete="off" spellcheck="false">
+                <button class="search-clear" id="search-clear" title="Clear">×</button>
+            </div>
+            <span class="search-count" id="search-count" style="display: none;">0</span>
+            <button class="search-nav-btn" id="search-prev" title="Previous match" disabled>
+                <svg viewBox="0 0 24 24"><polyline points="18 15 12 9 6 15" /></svg>
+            </button>
+            <button class="search-nav-btn" id="search-next" title="Next match" disabled>
+                <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" /></svg>
+            </button>
         </div>
 
         <div class="action-toolbar">
@@ -1166,7 +1322,7 @@
                         <polyline points="10 9 9 9 8 9" />
                     </svg>
                     <h3>No spreadsheet loaded</h3>
-                    <p>Open an <strong>.xlsx, .xls, .csv</strong> file. Edit cells, make text <strong>bold</strong>, change <strong>colors</strong>. Click <strong style="color:#0ea5e9">Publish to All</strong> to share with every visitor.</p>
+                    <p>Open an <strong>.xlsx, .xls, .csv</strong> file. Use the search bar to find names or numbers and jump straight to that column. Edit cells, make text <strong>bold</strong>, change <strong>colors</strong>.</p>
                 </div>
                 <div id="table-content" style="display: none;"></div>
             </div>
@@ -1174,7 +1330,7 @@
 
         <div class="footer-note">
             <span class="autosave-dot"></span>
-            <strong>H Excel</strong> · auto-save on · <span class="red-note">✎ red = new edit</span> · <span class="cloud-note">☁ publish to all</span>
+            <strong>H Excel</strong> · auto-save on · <span class="red-note">✎ red = new edit</span> · <span class="cloud-note">☁ publish to all</span> · <span style="color:#eab308;">🔍 search jumps to column</span>
         </div>
     </div>
 
@@ -1235,6 +1391,13 @@
             const globalBanner = document.getElementById('global-banner');
             const globalFileName = document.getElementById('global-file-name');
 
+            // Search
+            const searchInput = document.getElementById('search-input');
+            const searchClear = document.getElementById('search-clear');
+            const searchCount = document.getElementById('search-count');
+            const searchPrev = document.getElementById('search-prev');
+            const searchNext = document.getElementById('search-next');
+
             const colNavBar = document.getElementById('col-nav-bar');
             const colFirst = document.getElementById('col-first');
             const colPrev = document.getElementById('col-prev');
@@ -1273,6 +1436,11 @@
             let mergedMap = {};
 
             let autoSaveTimer = null;
+
+            // Search state
+            let searchMatches = [];      // [{ row, col, sheet }]
+            let searchIndex = -1;        // current match index
+            let searchQuery = '';
 
             // ============ UTILS ============
             function showToast(message, type = '') {
@@ -1478,7 +1646,7 @@
                 return { styles, merges };
             }
 
-            // ============ QUICK NAV (floating buttons) ============
+            // ============ QUICK NAV ============
             function updateQuickNav() {
                 if (!workbook || !currentSheetName) {
                     quickNav.classList.remove('visible');
@@ -1506,9 +1674,175 @@
             window.addEventListener('resize', () => { updateQuickNav(); updateColNavUI(); });
             navTop.addEventListener('click', () => tableContainer.scrollTo({ top: 0, behavior: 'smooth' }));
             navBottom.addEventListener('click', () => tableContainer.scrollTo({ top: tableContainer.scrollHeight, behavior: 'smooth' }));
-            // Toolbar nav buttons
             btnTop.addEventListener('click', () => tableContainer.scrollTo({ top: 0, behavior: 'smooth' }));
             btnBottom.addEventListener('click', () => tableContainer.scrollTo({ top: tableContainer.scrollHeight, behavior: 'smooth' }));
+
+            // ============ SEARCH ============
+            function performSearch(query) {
+                searchQuery = (query || '').trim();
+                // Clear previous highlights
+                tableContent.querySelectorAll('td.search-hit, td.search-current').forEach(td => {
+                    td.classList.remove('search-hit', 'search-current');
+                });
+
+                if (!searchQuery || !workbook) {
+                    searchMatches = [];
+                    searchIndex = -1;
+                    searchCount.style.display = 'none';
+                    searchPrev.disabled = true;
+                    searchNext.disabled = true;
+                    return;
+                }
+
+                const lowerQuery = searchQuery.toLowerCase();
+                const matches = [];
+
+                // Search across all sheets in the workbook
+                sheetNames.forEach(sName => {
+                    const sheet = workbook.Sheets[sName];
+                    if (!sheet) return;
+                    const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', raw: false });
+                    const edits = editedCells[sName] || {};
+                    const cleared = clearedCells[sName] || {};
+
+                    for (let r = 0; r < rows.length; r++) {
+                        const row = rows[r];
+                        for (let c = 0; c < row.length; c++) {
+                            let val = row[c];
+                            const key = `${r},${c}`;
+                            // Use the current value (edited or cleared) for matching
+                            if (edits[key] !== undefined) val = edits[key];
+                            else if (cleared[key] !== undefined) val = cleared[key];
+                            if (val === null || val === undefined) continue;
+                            const valStr = String(val);
+                            if (valStr.toLowerCase().includes(lowerQuery)) {
+                                matches.push({ sheet: sName, row: r, col: c, value: valStr });
+                            }
+                        }
+                    }
+                });
+
+                searchMatches = matches;
+                searchIndex = matches.length > 0 ? 0 : -1;
+
+                if (matches.length === 0) {
+                    searchCount.style.display = 'inline-block';
+                    searchCount.textContent = '0';
+                    searchPrev.disabled = true;
+                    searchNext.disabled = true;
+                    showToast('No matches found', 'error');
+                    return;
+                }
+
+                searchCount.style.display = 'inline-block';
+                searchCount.textContent = `${searchIndex + 1}/${matches.length}`;
+                searchPrev.disabled = false;
+                searchNext.disabled = false;
+
+                // Jump to first match
+                jumpToMatch(searchIndex);
+            }
+
+            function jumpToMatch(index) {
+                if (index < 0 || index >= searchMatches.length) return;
+                const match = searchMatches[index];
+                searchIndex = index;
+
+                // Update counter
+                searchCount.textContent = `${index + 1}/${searchMatches.length}`;
+
+                // Switch to the sheet containing the match
+                if (match.sheet !== currentSheetName) {
+                    setActiveSheet(match.sheet);
+                }
+
+                // Remove old current highlight
+                tableContent.querySelectorAll('td.search-current').forEach(td => td.classList.remove('search-current'));
+
+                // Wait for render then find and highlight the cell
+                setTimeout(() => {
+                    // Find matching cell in DOM
+                    const cell = tableContent.querySelector(`td[data-row="${match.row}"][data-col="${match.col}"]`);
+                    if (cell) {
+                        cell.classList.add('search-current');
+                        // Scroll into view (centered)
+                        cell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+                        // Auto-select for editing
+                        try {
+                            cell.focus({ preventScroll: true });
+                            selectedCell = cell;
+                            syncFormatButtons(match.sheet);
+                        } catch (e) {}
+                    }
+                }, 80);
+            }
+
+            searchInput.addEventListener('input', () => {
+                const q = searchInput.value;
+                if (q.trim().length > 0) searchClear.classList.add('visible');
+                else searchClear.classList.remove('visible');
+                // Debounce search slightly
+                clearTimeout(searchInput._debounce);
+                searchInput._debounce = setTimeout(() => performSearch(q), 200);
+            });
+
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (searchMatches.length === 0) performSearch(searchInput.value);
+                    else nextMatch();
+                } else if (e.key === 'Escape') {
+                    clearSearch();
+                }
+            });
+
+            searchClear.addEventListener('click', () => {
+                clearSearch();
+                searchInput.focus();
+            });
+
+            function clearSearch() {
+                searchInput.value = '';
+                searchClear.classList.remove('visible');
+                tableContent.querySelectorAll('td.search-hit, td.search-current').forEach(td => {
+                    td.classList.remove('search-hit', 'search-current');
+                });
+                searchMatches = [];
+                searchIndex = -1;
+                searchCount.style.display = 'none';
+                searchPrev.disabled = true;
+                searchNext.disabled = true;
+            }
+
+            function nextMatch() {
+                if (searchMatches.length === 0) return;
+                const next = (searchIndex + 1) % searchMatches.length;
+                jumpToMatch(next);
+            }
+            function prevMatch() {
+                if (searchMatches.length === 0) return;
+                const prev = (searchIndex - 1 + searchMatches.length) % searchMatches.length;
+                jumpToMatch(prev);
+            }
+            searchNext.addEventListener('click', nextMatch);
+            searchPrev.addEventListener('click', prevMatch);
+
+            // Re-apply search highlights after render (since render wipes the DOM)
+            function reapplySearchHighlights() {
+                if (searchMatches.length === 0) return;
+                tableContent.querySelectorAll('td.search-hit, td.search-current').forEach(td => {
+                    td.classList.remove('search-hit', 'search-current');
+                });
+                // Only highlight matches in the current sheet
+                searchMatches.forEach((m, i) => {
+                    if (m.sheet !== currentSheetName) return;
+                    const cell = tableContent.querySelector(`td[data-row="${m.row}"][data-col="${m.col}"]`);
+                    if (cell) {
+                        cell.classList.add('search-hit');
+                        if (i === searchIndex) cell.classList.add('search-current');
+                    }
+                });
+            }
 
             // ============ COLUMN NAV ============
             function updateColNavUI() {
@@ -2020,6 +2354,8 @@
                     });
                 });
                 applyEditHighlights(sheetName);
+                // Restore search highlights after re-render
+                reapplySearchHighlights();
                 if (showColumnNav) {
                     colNavBar.classList.remove('hidden');
                     if (!isWindowed && colWindowSize >= maxCols && maxCols > DEFAULT_WINDOW * 2) {
@@ -2196,6 +2532,7 @@
                 totalColumns = 0; colWindowStart = 0; colWindowSize = DEFAULT_WINDOW; isWindowed = false;
                 currentFileName = ''; isGlobalMode = false; globalFileRecord = null;
                 selectedCell = null;
+                searchMatches = []; searchIndex = -1; searchQuery = '';
                 updateSaveButtonState();
                 sheetTabs.style.display = 'none'; sheetTabs.innerHTML = '';
                 tableContent.style.display = 'none'; tableContent.innerHTML = '';
@@ -2211,6 +2548,12 @@
                 setLoading(false);
                 history = []; historyIndex = -1;
                 updateHistoryButtons();
+                // Clear search
+                searchInput.value = '';
+                searchClear.classList.remove('visible');
+                searchCount.style.display = 'none';
+                searchPrev.disabled = true;
+                searchNext.disabled = true;
             }
 
             // ============ FILE UPLOAD ============
@@ -2251,6 +2594,8 @@
             btnClearMarks.addEventListener('click', clearAllMarks);
 
             document.addEventListener('keydown', (e) => {
+                // Don't trigger shortcuts while typing in search
+                if (e.target === searchInput) return;
                 if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) { e.preventDefault(); undo(); }
                 else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) { e.preventDefault(); redo(); }
                 else if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
@@ -2264,6 +2609,10 @@
                         syncFormatButtons(info.sheet);
                         pushHistory();
                     }
+                } else if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+                    e.preventDefault();
+                    searchInput.focus();
+                    searchInput.select();
                 }
             });
 
