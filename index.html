@@ -180,8 +180,9 @@
             background: #ffffff;
             border-bottom: 1px solid #e9edf4;
             flex-shrink: 0;
-            position: relative;
-            z-index: 25;
+            position: sticky;
+            top: 0;
+            z-index: 40;
             flex-wrap: wrap;
         }
 
@@ -196,7 +197,7 @@
             padding: 0 0.5rem;
             gap: 6px;
             transition: all 0.15s;
-            min-height: 38px;
+            min-height: 40px;
         }
 
         .search-input-wrap:focus-within {
@@ -220,10 +221,10 @@
             outline: none;
             background: transparent;
             font-family: inherit;
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             font-weight: 500;
             color: #1e293b;
-            padding: 0.4rem 0;
+            padding: 0.45rem 0;
             min-width: 0;
             unicode-bidi: plaintext;
         }
@@ -231,6 +232,7 @@
         .search-input::placeholder {
             color: #94a3b8;
             font-weight: 400;
+            font-size: 0.82rem;
         }
 
         .search-clear {
@@ -267,8 +269,8 @@
             background: #1e6f3f;
             border: none;
             color: white;
-            width: 32px;
-            height: 32px;
+            width: 34px;
+            height: 34px;
             border-radius: 8px;
             display: flex;
             align-items: center;
@@ -309,6 +311,11 @@
             box-shadow: inset 0 0 0 3px #ca8a04 !important;
             z-index: 21;
             animation: searchPulse 1.2s ease-in-out infinite;
+        }
+        .excel-table th.search-col-hit {
+            background-color: #fde047 !important;
+            color: #78350f !important;
+            border-bottom-color: #ca8a04 !important;
         }
 
         @keyframes searchPulse {
@@ -705,7 +712,8 @@
         }
 
         .excel-table {
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
             font-size: 0.72rem;
             table-layout: fixed;
         }
@@ -1154,7 +1162,7 @@
             .col-nav-btn { min-width: 34px; min-height: 34px; }
             .file-label { min-height: 38px; }
             .nav-btn { min-width: 46px; min-height: 46px; }
-            .search-nav-btn { min-width: 36px; min-height: 36px; }
+            .search-nav-btn { min-width: 38px; min-height: 38px; }
         }
 
         .table-container, .sheet-tabs, .action-toolbar, .col-nav-bar {
@@ -1205,7 +1213,7 @@
         </div>
 
         <!-- ============ SEARCH BAR ============ -->
-        <div class="search-bar">
+        <div class="search-bar" id="search-bar">
             <div class="search-input-wrap">
                 <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                 <input type="search" class="search-input" id="search-input" placeholder="ابحث عن أي اسم أو رقم… Search any name or number…" autocomplete="off" spellcheck="false" dir="auto">
@@ -1401,7 +1409,7 @@
             const globalBanner = document.getElementById('global-banner');
             const globalFileName = document.getElementById('global-file-name');
 
-            // Search
+            const searchBar = document.getElementById('search-bar');
             const searchInput = document.getElementById('search-input');
             const searchClear = document.getElementById('search-clear');
             const searchCount = document.getElementById('search-count');
@@ -1451,28 +1459,22 @@
             let searchMatches = [];
             let searchIndex = -1;
             let searchQuery = '';
+            // Remember that the user is actively searching so we don't blur the input
+            let isSearchFocused = false;
 
             // ============ ARABIC / MULTILINGUAL NORMALIZATION ============
             function normalizeText(str) {
                 if (str === null || str === undefined) return '';
                 let s = String(str);
                 s = s.toLowerCase();
-                // Remove Arabic diacritics
                 s = s.replace(/[\u064B-\u065F\u0670\u06D6-\u06ED]/g, '');
-                // Remove tatweel
                 s = s.replace(/\u0640/g, '');
-                // Normalize Alef variants
                 s = s.replace(/[\u0622\u0623\u0625\u0671]/g, '\u0627');
-                // Normalize Yaa variants
                 s = s.replace(/\u0649/g, '\u064A');
-                // Normalize Taa Marbuta
                 s = s.replace(/\u0629/g, '\u0647');
-                // Normalize Hamza on Waw / Yaa
                 s = s.replace(/\u0624/g, '\u0648');
                 s = s.replace(/\u0626/g, '\u064A');
-                // Remove zero-width chars
                 s = s.replace(/[\u200B-\u200F\u202A-\u202E\u2060\uFEFF]/g, '');
-                // Collapse whitespace
                 s = s.replace(/\s+/g, ' ').trim();
                 return s;
             }
@@ -1712,11 +1714,14 @@
             btnTop.addEventListener('click', () => tableContainer.scrollTo({ top: 0, behavior: 'smooth' }));
             btnBottom.addEventListener('click', () => tableContainer.scrollTo({ top: tableContainer.scrollHeight, behavior: 'smooth' }));
 
-            // ============ SEARCH - FIXED to reliably navigate ============
+            // ============ SEARCH ============
             function performSearch(query) {
                 searchQuery = (query || '').trim();
                 tableContent.querySelectorAll('td.search-hit, td.search-current').forEach(td => {
                     td.classList.remove('search-hit', 'search-current');
+                });
+                tableContent.querySelectorAll('th.search-col-hit').forEach(th => {
+                    th.classList.remove('search-col-hit');
                 });
 
                 if (!searchQuery || !workbook) {
@@ -1812,10 +1817,9 @@
 
             /**
              * FIXED: Reliable jump to the matching cell.
-             * 1. If match is on another sheet, switch sheets first.
-             * 2. If the target column is outside the current window, expand the window
-             *    so the column is visible.
-             * 3. Then scroll the cell into view (centered) and focus it.
+             * - Handles column-window re-centering
+             * - Pushes the row into view BELOW the sticky headers
+             * - Keeps search input focused so the user can keep typing
              */
             function jumpToMatch(index) {
                 if (index < 0 || index >= searchMatches.length) return;
@@ -1824,7 +1828,7 @@
 
                 searchCount.textContent = `${index + 1}/${searchMatches.length}`;
 
-                // --- Step 1: Switch to the sheet containing the match (if different) ---
+                // --- Step 1: Switch sheet if needed ---
                 if (match.sheet !== currentSheetName) {
                     currentSheetName = match.sheet;
                     colWindowStart = 0; colWindowSize = DEFAULT_WINDOW; isWindowed = false;
@@ -1837,16 +1841,11 @@
                     updateQuickNav();
                 }
 
-                // --- Step 2: If the match column is outside the visible column window, expand it ---
-                const maxCols = (workbook.Sheets[match.sheet] && workbook.Sheets[match.sheet]['!ref'])
-                    ? XLSX.utils.decode_range(workbook.Sheets[match.sheet]['!ref']).e.c + 1
-                    : 0;
-
+                // --- Step 2: If match column is outside window, slide the window ---
                 if (totalColumns > 25) {
                     const visibleStart = colWindowStart;
                     const visibleEnd = colWindowStart + colWindowSize - 1;
                     if (match.col < visibleStart || match.col > visibleEnd) {
-                        // Re-center the window on the matching column, keeping the same size
                         let newStart = match.col - Math.floor(colWindowSize / 2);
                         if (newStart < 0) newStart = 0;
                         if (newStart + colWindowSize > totalColumns) {
@@ -1859,46 +1858,79 @@
                     }
                 }
 
-                // --- Step 3: Apply highlights + scroll into view + focus ---
-                // Remove old current highlight
+                // --- Step 3: Apply highlights on all matches in the current sheet ---
                 tableContent.querySelectorAll('td.search-current').forEach(td => td.classList.remove('search-current'));
+                tableContent.querySelectorAll('th.search-col-hit').forEach(th => th.classList.remove('search-col-hit'));
 
-                // Mark all matches on the current sheet
                 searchMatches.forEach((m, i) => {
                     if (m.sheet !== currentSheetName) return;
                     const cell = tableContent.querySelector(`td[data-row="${m.row}"][data-col="${m.col}"]`);
                     if (cell) {
                         cell.classList.add('search-hit');
-                        if (i === index) cell.classList.add('search-current');
+                        if (i === index) {
+                            cell.classList.add('search-current');
+                            // Also highlight the column header (th) for the matching column
+                            const th = tableContent.querySelector(`th[data-col="${m.col}"]`);
+                            if (th) th.classList.add('search-col-hit');
+                        }
                     }
                 });
 
-                // Scroll and focus the current cell (retry a couple of times in case render is async)
+                // --- Step 4: Scroll the current cell into view BELOW the sticky header ---
                 let attempts = 0;
                 const tryFocus = () => {
                     attempts++;
                     const cell = tableContent.querySelector(`td[data-row="${match.row}"][data-col="${match.col}"]`);
                     if (cell) {
                         cell.classList.add('search-current');
-                        // Robust manual scroll within the container (works even when cell is off-screen)
+
+                        // Compute sticky header height so we don't hide behind it
+                        const stickyHeader = tableContent.querySelector('thead th');
+                        const headerHeight = stickyHeader ? stickyHeader.offsetHeight : 0;
+                        const rowNumCell = tableContent.querySelector('td.row-num');
+                        const rowNumWidth = rowNumCell ? rowNumCell.offsetWidth : 0;
+
                         try {
                             const containerRect = tableContainer.getBoundingClientRect();
                             const cellRect = cell.getBoundingClientRect();
-                            const targetScrollTop = tableContainer.scrollTop + (cellRect.top - containerRect.top) - (tableContainer.clientHeight / 2) + (cellRect.height / 2);
-                            const targetScrollLeft = tableContainer.scrollLeft + (cellRect.left - containerRect.left) - (tableContainer.clientWidth / 2) + (cellRect.width / 2);
+
+                            // Vertical: place cell in middle of the visible area below the header
+                            const visibleTop = containerRect.top + headerHeight;
+                            const visibleBottom = containerRect.bottom;
+                            const visibleHeight = visibleBottom - visibleTop;
+                            const cellCenterY = cellRect.top + cellRect.height / 2;
+                            const desiredCenterY = visibleTop + visibleHeight / 2;
+                            const deltaY = cellCenterY - desiredCenterY;
+
+                            // Horizontal: place cell in middle of the visible area right of the row-num
+                            const visibleLeft = containerRect.left + rowNumWidth;
+                            const visibleRight = containerRect.right;
+                            const visibleWidth = visibleRight - visibleLeft;
+                            const cellCenterX = cellRect.left + cellRect.width / 2;
+                            const desiredCenterX = visibleLeft + visibleWidth / 2;
+                            const deltaX = cellCenterX - desiredCenterX;
+
                             tableContainer.scrollTo({
-                                top: Math.max(0, targetScrollTop),
-                                left: Math.max(0, targetScrollLeft),
+                                top: Math.max(0, tableContainer.scrollTop + deltaY),
+                                left: Math.max(0, tableContainer.scrollLeft + deltaX),
                                 behavior: 'smooth'
                             });
                         } catch (e) {
                             cell.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
                         }
-                        try {
-                            cell.focus({ preventScroll: true });
+
+                        // Focus the cell WITHOUT stealing focus from the search input if the user is typing
+                        if (!isSearchFocused) {
+                            try {
+                                cell.focus({ preventScroll: true });
+                                selectedCell = cell;
+                                syncFormatButtons(match.sheet);
+                            } catch (e) {}
+                        } else {
+                            // Still update selectedCell reference without focusing
                             selectedCell = cell;
                             syncFormatButtons(match.sheet);
-                        } catch (e) {}
+                        }
                     } else if (attempts < 4) {
                         setTimeout(tryFocus, 80);
                     }
@@ -1906,7 +1938,11 @@
                 setTimeout(tryFocus, 60);
             }
 
-            // Live search as you type — debounced for performance
+            // Track search focus so we don't steal it when jumping to a match
+            searchInput.addEventListener('focus', () => { isSearchFocused = true; });
+            searchInput.addEventListener('blur', () => { isSearchFocused = false; });
+
+            // Live search as you type — debounced
             let searchDebounce = null;
             searchInput.addEventListener('input', () => {
                 const q = searchInput.value;
@@ -1924,6 +1960,7 @@
                     else nextMatch();
                 } else if (e.key === 'Escape') {
                     clearSearch();
+                    searchInput.blur();
                 } else if (e.key === 'ArrowDown') {
                     if (searchMatches.length > 0) { e.preventDefault(); nextMatch(); }
                 } else if (e.key === 'ArrowUp') {
@@ -1941,6 +1978,9 @@
                 searchClear.classList.remove('visible');
                 tableContent.querySelectorAll('td.search-hit, td.search-current').forEach(td => {
                     td.classList.remove('search-hit', 'search-current');
+                });
+                tableContent.querySelectorAll('th.search-col-hit').forEach(th => {
+                    th.classList.remove('search-col-hit');
                 });
                 searchMatches = [];
                 searchIndex = -1;
@@ -1968,12 +2008,19 @@
                 tableContent.querySelectorAll('td.search-hit, td.search-current').forEach(td => {
                     td.classList.remove('search-hit', 'search-current');
                 });
+                tableContent.querySelectorAll('th.search-col-hit').forEach(th => {
+                    th.classList.remove('search-col-hit');
+                });
                 searchMatches.forEach((m, i) => {
                     if (m.sheet !== currentSheetName) return;
                     const cell = tableContent.querySelector(`td[data-row="${m.row}"][data-col="${m.col}"]`);
                     if (cell) {
                         cell.classList.add('search-hit');
-                        if (i === searchIndex) cell.classList.add('search-current');
+                        if (i === searchIndex) {
+                            cell.classList.add('search-current');
+                            const th = tableContent.querySelector(`th[data-col="${m.col}"]`);
+                            if (th) th.classList.add('search-col-hit');
+                        }
                     }
                 });
             }
@@ -2409,7 +2456,7 @@
                     const colLabel = colLetter(i);
                     const headerKey = `0,${i}`;
                     const headerStyle = styles[headerKey] || '';
-                    html += `<th style="${headerStyle}" title="${escapeHtml(colLabel)}">${escapeHtml(String(headerVal)) || colLabel}</th>`;
+                    html += `<th style="${headerStyle}" data-col="${i}" title="${escapeHtml(colLabel)}">${escapeHtml(String(headerVal)) || colLabel}</th>`;
                 }
                 html += '</tr></thead><tbody>';
                 for (let r = 1; r < normalizedRows.length; r++) {
