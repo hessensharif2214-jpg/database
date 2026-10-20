@@ -3181,25 +3181,6 @@
         textInput.addEventListener('blur', () => setTimeout(() => suggestionDropdown.classList.remove('show'), 200));
         textInput.addEventListener('focus', () => { if (textInput.value.trim()) updateSuggestions(textInput.value); });
 
-        // Auto-fill from saved pairs when A8 is PASTED (not just typed)
-        textInput.addEventListener('paste', () => {
-            setTimeout(() => {
-                // Only act if the active layer is A8 (index 7)
-                const activeIdx = project.layers.findIndex(l => l.id === selectedLayerId);
-                if (activeIdx !== 7) return;
-                const pastedValue = (textInput.value || '').trim();
-                if (!pastedValue) return;
-                const saved = loadSavedDataPairs();
-                if (saved[pastedValue]) {
-                    applySavedDataPair(pastedValue);
-                    showFlashMessage('Auto-filled from saved pair');
-                } else {
-                    // Fallback: name memory lookup
-                    lookupAndFillName(pastedValue);
-                }
-            }, 50);
-        });
-
         function setClipboardStatus(msg, type) {
             const el = document.getElementById('clipboardStatus');
             if (!el) return;
