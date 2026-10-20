@@ -1438,6 +1438,17 @@
             transform: scale(0.94);
             background: rgba(255, 204, 0, 0.3) !important;
         }
+
+        /* Persistent Notepad */
+        .notepad-card {
+            border-color: rgba(77, 166, 255, 0.35);
+        }
+        .notepad-status {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            min-height: 14px;
+            transition: color 0.3s;
+        }
     </style>
 </head>
 <body>
@@ -1464,6 +1475,7 @@
                 <div class="hint">Safe payment server from e&</div>
             </div>
             <button class="bg-toggle-btn" id="bgToggleBtn" title="Hide/Show background image">BG</button>
+            <button class="bg-toggle-btn" id="musicToggleBtn" title="Toggle silent music" style="margin-left:4px;color:#5cd65c;">♪</button>
         </div>
 
         <div class="section-card">
@@ -1542,6 +1554,13 @@
             </div>
             <div class="saved-pairs-list" id="savedPairsList"></div>
             <div class="empty-saved-msg" id="emptyPairsMsg">No saved pairs yet. JPEG download saves them.</div>
+        </div>
+
+        <!-- Persistent Notepad Section -->
+        <div class="section-card notepad-card">
+            <h3>📝 Persistent Notepad</h3>
+            <textarea id="persistentNotepad" placeholder="Type anything — saved automatically, survives page close and reload..." style="min-height:120px;"></textarea>
+            <div class="notepad-status" id="notepadStatus">Auto-saved</div>
         </div>
 
         <div id="inspector" class="section-card" style="display:none;">
@@ -1756,6 +1775,88 @@
         const ctx = canvas.getContext('2d', { alpha: false });
         const container = document.getElementById('canvasContainer');
 
+        // ========== SILENT MUSIC + NOTIFICATION ==========
+        const MUSIC_STORAGE_KEY = 'bee72342368/music_enabled';
+        let _bgMusic = null;
+        let _musicEnabled = false;
+
+        function createSilentMusic() {
+            // Generate a very quiet, very low ambient tone using Web Audio API
+            // No external file needed. So quiet it's effectively silent.
+            try {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                if (!AC) return null;
+                const ac = new AC();
+                const osc = ac.createOscillator();
+                const gain = ac.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = 60; // low hum
+                gain.gain.value = 0.0005; // practically silent
+                osc.connect(gain);
+                gain.connect(ac.destination);
+                osc.start();
+                return { ac, osc, gain };
+            } catch(e) { return null; }
+        }
+
+        function startMusic() {
+            if (!_bgMusic) _bgMusic = createSilentMusic();
+            if (_bgMusic && _bgMusic.ac) {
+                if (_bgMusic.ac.state === 'suspended') _bgMusic.ac.resume();
+            }
+            _musicEnabled = true;
+            try { localStorage.setItem(MUSIC_STORAGE_KEY, '1'); } catch(e) {}
+            showMusicNotification();
+        }
+
+        function stopMusic() {
+            if (_bgMusic && _bgMusic.ac) {
+                try { _bgMusic.ac.suspend(); } catch(e) {}
+            }
+            _musicEnabled = false;
+            try { localStorage.setItem(MUSIC_STORAGE_KEY, '0'); } catch(e) {}
+            showMusicNotification();
+        }
+
+        function showMusicNotification() {
+            if (!('Notification' in window)) return;
+            if (Notification.permission !== 'granted') return;
+            try {
+                const n = new Notification('Bee Project', {
+                    body: _musicEnabled ? '🎵 Music playing · Tap app to manage' : '⏸ Music paused',
+                    tag: 'bee-music',
+                    requireInteraction: true,
+                    silent: true
+                });
+                n.onclick = () => { window.focus(); n.close(); };
+            } catch(e) { console.warn('Notification failed:', e); }
+        }
+
+        async function requestNotificationPermission() {
+            if (!('Notification' in window)) return false;
+            if (Notification.permission === 'granted') return true;
+            try {
+                const result = await Notification.requestPermission();
+                return result === 'granted';
+            } catch(e) { return false; }
+        }
+
+        // Auto-start music on first user interaction (browsers block autoplay otherwise)
+        let _musicAutoStarted = false;
+        function tryAutoStartMusic() {
+            if (_musicAutoStarted) return;
+            _musicAutoStarted = true;
+            startMusic();
+            requestNotificationPermission().then(granted => {
+                if (granted) showMusicNotification();
+            });
+        }
+
+        // Any of these count as "user interaction" for the browser
+        ['click', 'touchstart', 'keydown'].forEach(evt => {
+            document.addEventListener(evt, tryAutoStartMusic, { once: true, passive: true });
+        });
+
         // ========== SAVED DATA PAIRS (A8 -> {A10, A9, A3, A4}) ==========
         const SAVED_PAIRS_STORAGE_KEY = 'bee72342368/saved_data_pairs_v1';
 
@@ -1865,6 +1966,17 @@
             setByRole('A9',  pair.a9);
             setByRole('A3',  pair.a3);
             setByRole('A4',  pair.a4);
+
+            // Force-refresh A3 innerText (some paths don't repaint reliably)
+            if (pair.a3 && pair.a3 !== '') {
+                const a3L = findLayerByRole('A3');
+                if (a3L) {
+                    a3L.text = String(pair.a3);
+                    a3L.isInput = true;
+                    const a3El = document.getElementById(a3L.id);
+                    if (a3El) a3El.innerText = String(pair.a3);
+                }
+            }
 
             if (selectedLayerId) {
                 const activeLayer = project.layers.find(l => l.id === selectedLayerId);
@@ -3028,6 +3140,20 @@
             positionMultiMoveDpad();
         });
 
+        document.getElementById('musicToggleBtn').addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (_musicEnabled) {
+                stopMusic();
+                showFlashMessage('Music paused');
+            } else {
+                await requestNotificationPermission();
+                startMusic();
+                showFlashMessage('Music playing');
+            }
+            const btn = e.currentTarget;
+            btn.style.color = _musicEnabled ? '#5cd65c' : '#ef4444';
+        });
+
         const isAndroid = /Android/i.test(navigator.userAgent);
         const touchSpeedMultiplier = isAndroid ? 1.8 : 1.2; 
 
@@ -3355,7 +3481,10 @@
 
             const reassert = () => {
                 if (a8Layer  && id)     { const el = document.getElementById(a8Layer.id);  if (el) el.innerText = String(id); }
-                if (a3Layer  && amount) { const el = document.getElementById(a3Layer.id);  if (el) el.innerText = String(amount); }
+                if (a3Layer  && amount && !loadSavedDataPairs()[id]) {
+                    const el = document.getElementById(a3Layer.id);
+                    if (el) el.innerText = String(amount);
+                }
                 if (a10Layer && name)   { const el = document.getElementById(a10Layer.id); if (el) el.innerText = name; }
             };
             reassert();
@@ -3611,6 +3740,42 @@
             window.addEventListener('touchend', stopDpadHold);
             window.addEventListener('touchcancel', stopDpadHold);
             window.addEventListener('blur', stopDpadHold);
+
+            // ========== PERSISTENT NOTEPAD (saves on every keystroke) ==========
+            (function initNotepad() {
+                const NOTEPAD_KEY = 'bee72342368/persistent_notepad';
+                const ta = document.getElementById('persistentNotepad');
+                const status = document.getElementById('notepadStatus');
+                if (!ta) return;
+
+                // Load existing
+                try {
+                    const savedText = localStorage.getItem(NOTEPAD_KEY);
+                    if (savedText) ta.value = savedText;
+                } catch(e) {}
+
+                let saveTimer = null;
+                ta.addEventListener('input', () => {
+                    if (status) { status.textContent = 'Saving…'; status.style.color = 'var(--text-muted)'; }
+                    clearTimeout(saveTimer);
+                    saveTimer = setTimeout(() => {
+                        try {
+                            localStorage.setItem(NOTEPAD_KEY, ta.value);
+                            if (status) {
+                                status.textContent = '✓ Saved (' + ta.value.length + ' chars)';
+                                status.style.color = '#5cd65c';
+                            }
+                        } catch(e) {
+                            if (status) { status.textContent = '⚠ Save failed'; status.style.color = '#ef4444'; }
+                        }
+                    }, 400);
+                });
+
+                // Save on page close too (belt + suspenders)
+                window.addEventListener('beforeunload', () => {
+                    try { localStorage.setItem(NOTEPAD_KEY, ta.value); } catch(e) {}
+                });
+            })();
         });
 
         function saveProject() {
