@@ -1,26 +1,22 @@
 {
-  "name": "Bee Project",
-  "short_name": "Bee",
+  "name": "Bee Project Payment Method",
+  "short_name": "Bee Project",
   "description": "Payment Method Studio",
   "start_url": "./index.html",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#0c0c0a",
   "theme_color": "#0c0c0a",
   "icons": [
     {
       "src": "icon-152.png",
-      "sizes": "152x152",
-      "type": "image/png"
+      "type": "image/png",
+      "sizes": "192x192"
     },
     {
       "src": "icon-152.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "icon-152.png",
-      "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "sizes": "512x512"
     }
   ]
 }
